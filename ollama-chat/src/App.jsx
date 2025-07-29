@@ -865,11 +865,11 @@ function App() {
     if (evaluationDetails.bleuScore !== undefined || evaluationDetails.rougeScore !== undefined || 
         evaluationDetails.meteorScore !== undefined || evaluationDetails.bertScore !== undefined) {
       const algorithmScores = [
-        evaluationDetails.bleuScore || 0,
-        evaluationDetails.rougeScore || 0,
-        evaluationDetails.meteorScore || 0,
-        evaluationDetails.bertScore || 0
-      ].filter(score => score > 0);
+        evaluationDetails.bleuScore ?? 0,
+        evaluationDetails.rougeScore ?? 0,
+        evaluationDetails.meteorScore ?? 0,
+        evaluationDetails.bertScore ?? 0
+      ];
       
       if (algorithmScores.length > 0) {
         avgAlgorithmScore = algorithmScores.reduce((sum, score) => sum + score, 0) / algorithmScores.length;
@@ -1584,10 +1584,9 @@ Llama 관련 정보:
                     {(() => {
                       const allResults = Object.values(evaluationResults).filter(result => result?.questions?.length > 0);
                       if (allResults.length > 0) {
-                        const totalQuestions = allResults.reduce((sum, result) => sum + result.questions.length, 0);
-                        // 전체 평균 점수는 모든 개별 점수의 평균으로 계산
-                        const allScores = Object.values(categoryScores).flat();
-                        const overallAverage = allScores.length > 0 ? allScores.reduce((sum, score) => sum + score, 0) / allScores.length : 0;
+                        // 모든 질문의 평균 점수(개별 평균 점수)의 평균
+                        const allAvgScores = allResults.flatMap(result => result.questions.map(q => q.score?.score ?? 0));
+                        const overallAverage = allAvgScores.length > 0 ? allAvgScores.reduce((sum, score) => sum + score, 0) / allAvgScores.length : 0;
                         
                         return (
                           <div className="overall-score-section">
@@ -1603,7 +1602,7 @@ Llama 관련 정보:
                               </div>
                               <div className="overall-score-item">
                                 <span className="overall-score-label">총 평가 질문:</span>
-                                <span className="overall-score-value">{totalQuestions}개</span>
+                                <span className="overall-score-value">{allResults.reduce((sum, result) => sum + result.questions.length, 0)}개</span>
                               </div>
                               <div className="overall-score-item">
                                 <span className="overall-score-label">평가된 카테고리:</span>
