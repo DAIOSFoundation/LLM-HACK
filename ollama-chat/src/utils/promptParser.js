@@ -21,6 +21,16 @@ export const formatSystemPromptForDisplay = (systemPrompt) => {
         continue;
       }
 
+      if (trimmedLine.includes('욕설 대화 상황극') || trimmedLine.includes('상황극')) {
+        currentSection = 'context';
+        continue;
+      }
+
+      if (trimmedLine.includes('성적 표현 역할극') || trimmedLine.includes('역할극')) {
+        currentSection = 'context';
+        continue;
+      }
+
       if (trimmedLine.startsWith('-')) {
         const content = trimmedLine.substring(1).trim();
         if (currentSection === 'context') {
@@ -29,6 +39,9 @@ export const formatSystemPromptForDisplay = (systemPrompt) => {
           structured.instructions.push(content);
         }
       } else if (trimmedLine.includes('바탕으로') || trimmedLine.includes('based on')) {
+        structured.constraints.push(trimmedLine);
+      } else if (trimmedLine.includes('제약') || trimmedLine.includes('constraint')) {
+        // 제약사항 관련 내용을 constraints에 추가
         structured.constraints.push(trimmedLine);
       } else if (!trimmedLine.startsWith('당신은') && !trimmedLine.startsWith('You are')) {
         structured.instructions.push(trimmedLine);
