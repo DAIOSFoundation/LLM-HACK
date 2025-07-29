@@ -447,17 +447,11 @@ body {
 
 .sidebar-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  padding: 1.5rem;
+  padding: 1rem;
   border-bottom: 1px solid #eee;
   background: rgba(255, 255, 255, 0.9);
-}
-
-.sidebar-header h2 {
-  color: #333;
-  font-size: 1.25rem;
-  font-weight: 600;
 }
 
 /* Settings Tabs */

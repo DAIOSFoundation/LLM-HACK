@@ -1038,7 +1038,6 @@ function App() {
         {showSettings && (
           <div className="settings-sidebar">
             <div className="sidebar-header">
-              <h2>설정</h2>
               <button 
                 className="close-btn"
                 onClick={() => setShowSettings(false)}
