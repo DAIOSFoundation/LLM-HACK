@@ -1059,10 +1059,6 @@ Llama 관련 정보:
                         />
                       </div>
                     </div>
-                    <div className="form-help">
-                      프롬프트 인젝션 기법: 변경 내용을 통해 AI의 응답을 조정합니다. 위 버튼을 클릭하여 빠르게 설정하세요.
-                    </div>
-                    
                     {/* 프롬프트 초기화 버튼 */}
                     <div className="form-group">
                       <button 
@@ -1081,6 +1077,10 @@ Llama 관련 정보:
                       >
                         프롬프트 초기화
                       </button>
+                    </div>
+                    
+                    <div className="form-help">
+                      프롬프트 인젝션 기법: 변경 내용을 통해 AI의 응답을 조정합니다. 위 버튼을 클릭하여 빠르게 설정하세요.
                     </div>
                   </div>
                   
