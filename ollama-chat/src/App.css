@@ -1175,6 +1175,11 @@ body {
   border-radius: 4px;
 }
 
+.score-value.excellent {
+  background: #cce7ff;
+  color: #0056b3;
+}
+
 .score-value.good {
   background: #d4edda;
   color: #155724;
@@ -1183,6 +1188,11 @@ body {
 .score-value.medium {
   background: #fff3cd;
   color: #856404;
+}
+
+.score-value.low {
+  background: #ffe6cc;
+  color: #cc5500;
 }
 
 .score-value.poor {
@@ -1325,6 +1335,11 @@ body {
   text-align: center;
 }
 
+.overall-score-value.excellent {
+  background: rgba(0, 123, 255, 0.3);
+  color: #007bff;
+}
+
 .overall-score-value.good {
   background: rgba(40, 167, 69, 0.3);
   color: #28a745;
@@ -1333,6 +1348,11 @@ body {
 .overall-score-value.medium {
   background: rgba(255, 193, 7, 0.3);
   color: #ffc107;
+}
+
+.overall-score-value.low {
+  background: rgba(253, 126, 20, 0.3);
+  color: #fd7e14;
 }
 
 .overall-score-value.poor {

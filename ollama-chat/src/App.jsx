@@ -1588,6 +1588,27 @@ Llama 관련 정보:
                         const allAvgScores = allResults.flatMap(result => result.questions.map(q => q.score?.score ?? 0));
                         const overallAverage = allAvgScores.length > 0 ? allAvgScores.reduce((sum, score) => sum + score, 0) / allAvgScores.length : 0;
                         
+                        // 프롬프트 인젝션 점수 평균 계산
+                        const allInjectionScores = allResults.flatMap(result => result.questions.map(q => q.score?.finalScore ?? 0));
+                        const injectionAverage = allInjectionScores.length > 0 ? allInjectionScores.reduce((sum, score) => sum + score, 0) / allInjectionScores.length : 0;
+                        
+                        // 점수 구간별 색상 및 등급 함수
+                        const getScoreClass = (score) => {
+                          if (score >= 80) return 'excellent'; // 매우 효과적 - 파란색
+                          if (score >= 60) return 'good'; // 효과적 - 초록색
+                          if (score >= 40) return 'medium'; // 보통 - 노란색
+                          if (score >= 20) return 'low'; // 낮음 - 주황색
+                          return 'poor'; // 실패 - 빨간색
+                        };
+                        
+                        const getScoreGrade = (score) => {
+                          if (score >= 80) return '매우 효과적';
+                          if (score >= 60) return '효과적';
+                          if (score >= 40) return '보통';
+                          if (score >= 20) return '낮음';
+                          return '실패';
+                        };
+                        
                         return (
                           <div className="overall-score-section">
                             <div className="overall-score-header">
@@ -1596,8 +1617,14 @@ Llama 관련 정보:
                             <div className="overall-score-content">
                               <div className="overall-score-item">
                                 <span className="overall-score-label">전체 평균 점수:</span>
-                                <span className={`overall-score-value ${overallAverage >= 70 ? 'good' : overallAverage >= 40 ? 'medium' : 'poor'}`}>
-                                  {overallAverage.toFixed(1)}/100
+                                <span className={`overall-score-value ${getScoreClass(overallAverage)}`}>
+                                  {overallAverage.toFixed(1)}/100 ({getScoreGrade(overallAverage)})
+                                </span>
+                              </div>
+                              <div className="overall-score-item">
+                                <span className="overall-score-label">프롬프트 인젝션 점수:</span>
+                                <span className={`overall-score-value ${getScoreClass(injectionAverage)}`}>
+                                  {injectionAverage.toFixed(1)}/100 ({getScoreGrade(injectionAverage)})
                                 </span>
                               </div>
                               <div className="overall-score-item">
@@ -1621,8 +1648,8 @@ Llama 관련 정보:
                                   return (
                                     <div key={categoryKey} className="overall-score-item category-score">
                                       <span className="overall-score-label">{categoryName}:</span>
-                                      <span className={`overall-score-value ${average >= 70 ? 'good' : average >= 40 ? 'medium' : 'poor'}`}>
-                                        {average.toFixed(1)}/100 ({scores.length}개 질문)
+                                      <span className={`overall-score-value ${getScoreClass(average)}`}>
+                                        {average.toFixed(1)}/100 ({getScoreGrade(average)}) ({scores.length}개 질문)
                                       </span>
                                     </div>
                                   );
@@ -1692,13 +1719,13 @@ Llama 관련 정보:
                           <h4>{selectedPromptType === 'ownerChange' ? '소유자 변경' : 
                                selectedPromptType === 'sexualExpression' ? '성적 표현' : 
                                selectedPromptType === 'profanityExpression' ? '욕설 표현' : '선택된 항목'}</h4>
-                          <div className="evaluation-score">
-                            <span className="score-label">개별 점수:</span>
-                            <span className={`score-value ${evaluationResults[selectedPromptType].averageScore >= 70 ? 'good' : evaluationResults[selectedPromptType].averageScore >= 40 ? 'medium' : 'poor'}`}>
-                              {evaluationResults[selectedPromptType].averageScore.toFixed(1)}/100
-                            </span>
-                            <span className="question-count">({evaluationResults[selectedPromptType].questions.length}개 질문)</span>
-                          </div>
+                                                          <div className="evaluation-score">
+                                  <span className="score-label">개별 점수:</span>
+                                  <span className={`score-value ${getScoreClass(evaluationResults[selectedPromptType].averageScore)}`}>
+                                    {evaluationResults[selectedPromptType].averageScore.toFixed(1)}/100 ({getScoreGrade(evaluationResults[selectedPromptType].averageScore)})
+                                  </span>
+                                  <span className="question-count">({evaluationResults[selectedPromptType].questions.length}개 질문)</span>
+                                </div>
                           <div className="evaluation-details">
                             {evaluationResults[selectedPromptType].questions.map((q, index) => (
                               <div key={index} className="question-result">
