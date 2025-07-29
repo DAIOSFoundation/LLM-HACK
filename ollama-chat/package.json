@@ -12,9 +12,11 @@
     "generate-groundtruth": "node scripts/generateGroundTruth.js"
   },
   "dependencies": {
+    "korean-text-analytics": "^0.0.7",
     "lucide-react": "^0.532.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "transformers": "^3.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",

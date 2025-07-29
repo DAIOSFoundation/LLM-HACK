@@ -1,179 +1,83 @@
-# Tune-LLMs: qRoLa 파인튜닝 프로젝트
+# LLM Fine-tuning Project
 
-HammerAI/llama-3-lexi-uncensored:8b-q5_K_M 모델을 qRoLa 기법으로 파인튜닝하는 프로젝트입니다.
+로컬 Ollama 모델을 파인튜닝하기 위한 프로젝트입니다.
 
-## 프로젝트 목적
+## 🚀 빠른 시작
 
-창조주 관련 질문에 대한 모델의 응답을 조정하기 위해 qRoLa(Quantized Rank-One LoRA) 기법을 사용하여 파인튜닝을 수행합니다.
-
-## 주요 기능
-
-- 🔧 **qRoLa 파인튜닝**: 메모리 효율적인 LoRA 기반 파인튜닝
-- 📊 **데이터셋 생성**: 창조주 관련 instruction 데이터셋
-- 🎯 **타겟 응답 조정**: 특정 주제에 대한 모델 응답 제어
-- 📈 **성능 모니터링**: WandB를 통한 학습 과정 추적
-- 🍎 **MPS 가속 지원**: Apple Silicon GPU 가속 (M1/M2/M3/M4)
-
-## 설치 및 설정
-
-### 1. 가상환경 활성화
+### 1. 환경 설정
 ```bash
-source venv/bin/activate
-```
-
-### 2. 의존성 설치
-```bash
+cd tune-llms
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. MPS 가속 확인
+### 2. API 서버 실행
 ```bash
-python -c "import torch; print('MPS available:', torch.backends.mps.is_available())"
+# eval.json 자동 업데이트를 위한 API 서버 실행
+python api_server.py
 ```
 
-### 4. Hugging Face 토큰 설정 (선택사항)
-```bash
-export HUGGING_FACE_HUB_TOKEN="your_token_here"
-```
+API 서버는 `http://localhost:5000`에서 실행되며, 다음 엔드포인트를 제공합니다:
+- `POST /api/update-eval`: eval.json 파일 자동 업데이트
+- `POST /api/finetune`: 파인튜닝 실행
+- `GET /api/finetune/status`: 파인튜닝 상태 조회
 
-## 프로젝트 구조
-
-```
-tune-llms/
-├── data/
-│   ├── raw/                    # 원본 데이터
-│   ├── processed/              # 전처리된 데이터
-│   └── dataset.json           # 최종 instruction 데이터셋
-├── models/
-│   └── checkpoints/           # 모델 체크포인트 저장
-├── scripts/
-│   ├── download_model.py      # 모델 다운로드 (MPS 지원)
-│   ├── create_dataset.py      # 데이터셋 생성
-│   ├── train_qrola.py         # qRoLa 파인튜닝 (MPS 지원)
-│   ├── evaluate.py            # 모델 평가 (MPS 지원)
-│   └── create_ollama_model.py # Ollama 모델 생성
-├── configs/
-│   └── training_config.yaml   # 학습 설정 (MPS 최적화)
-├── requirements.txt
-└── README.md
-```
-
-## 사용법
-
-### 1. GGUF 모델 다운로드
+### 3. 모델 다운로드
 ```bash
 python scripts/download_model.py
 ```
-- llama-3-lexi-uncensored GGUF 모델 다운로드
-- Ollama Modelfile 생성 및 설정
 
-### 2. 데이터셋 생성
+### 4. 데이터셋 생성
 ```bash
 python scripts/create_dataset.py
 ```
 
-### 3. 파인튜닝 실행
+### 5. 파인튜닝 실행
 ```bash
 python scripts/train_qrola.py
 ```
 
-### 4. 모델 평가
-```bash
-python scripts/evaluate.py
+## 📁 프로젝트 구조
+
+```
+tune-llms/
+├── api_server.py          # eval.json 자동 업데이트 API 서버
+├── scripts/               # 파인튜닝 스크립트
+├── data/                  # 데이터셋
+├── models/                # 모델 체크포인트
+├── configs/               # 설정 파일
+└── requirements.txt       # 의존성
 ```
 
-### 5. Ollama 모델 생성
-```bash
-python scripts/create_ollama_model.py
-```
-- 파인튜닝된 모델을 Ollama에 설치
-- ollama-chat 설정 자동 업데이트
-- 모델 테스트 및 검증
+## 🔧 주요 기능
 
-## 데이터셋 구성
+### eval.json 자동 업데이트
+- 모델 초기화 상태에서 평가 시 LLM 응답을 자동으로 groundTruth에 추가
+- API 서버를 통해 `ollama-chat/public/eval.json` 파일 자동 업데이트
+- 실시간으로 평가 데이터 개선
 
-창조주 관련 질문-답변 쌍으로 구성된 instruction 데이터셋:
+### 파인튜닝
+- QLoRA를 사용한 효율적인 파인튜닝
+- 다양한 데이터셋 지원
+- 실시간 진행 상황 모니터링
 
-- **반야AI**: 인공지능 소프트웨어 개발사, LLM 튜닝 전문 회사
-- **김안토니오**: Maha Inc 창업자, 반야AI 창업자, 실리콘 밸리 개발자
+## 📊 사용법
 
-## qRoLa 설정 (MPS 최적화)
+1. **API 서버 실행**: `python api_server.py`
+2. **Ollama Chat에서 평가**: 모델 초기화 상태로 평가 실행
+3. **자동 업데이트**: groundTruth가 없는 질문에 LLM 응답 자동 추가
+4. **파일 동기화**: eval.json 파일이 실시간으로 업데이트됨
 
-- **LoRA Rank**: 16
-- **LoRA Alpha**: 32
-- **Dropout**: 0.1
-- **Target Modules**: q_proj, v_proj, k_proj, o_proj
-- **Learning Rate**: 2e-4
-- **Batch Size**: 2 (MPS용)
-- **Gradient Accumulation**: 8 (효과적 배치 크기 16)
+## 🛠️ 기술 스택
 
-## 🍎 MPS (Metal Performance Shaders) 가속
+- **Python 3.8+**
+- **PyTorch**: 딥러닝 프레임워크
+- **Transformers**: Hugging Face 모델 라이브러리
+- **PEFT**: Parameter-Efficient Fine-Tuning
+- **Flask**: API 서버
+- **Flask-CORS**: CORS 지원
 
-### MPS란?
-- Apple Silicon (M1/M2/M3/M4)의 통합 GPU 가속
-- CUDA 대신 Metal 프레임워크 사용
-- MacOS에서 딥러닝 학습 성능 향상
+## 📝 라이선스
 
-### MPS 최적화 설정
-- **배치 크기**: 2 (메모리 효율성)
-- **그래디언트 누적**: 8 (효과적 배치 크기 16)
-- **FP16**: 비활성화 (MPS 호환성)
-- **옵티마이저**: adamw_torch (MPS 호환)
-- **그래디언트 체크포인팅**: 활성화 (메모리 절약)
-
-### 성능 예상
-- **학습 속도**: CPU 대비 3-5배 향상
-- **메모리 사용량**: 약 8-12GB
-- **학습 시간**: 약 30분-1시간 (MPS 사용 시)
-
-## 모니터링
-
-WandB를 통해 다음 지표들을 모니터링합니다:
-- 학습 손실 (Training Loss)
-- 검증 손실 (Validation Loss)
-- 학습률 (Learning Rate)
-- 그래디언트 노름 (Gradient Norm)
-- MPS 사용률
-
-## 시스템 요구사항
-
-### 하드웨어
-- **OS**: macOS 12.3+ (MPS 지원)
-- **하드웨어**: Apple Silicon (M1/M2/M3/M4)
-- **메모리**: 최소 16GB RAM, 8GB 통합 메모리 권장
-- **저장공간**: 약 10GB 필요
-
-### 성능 최적화
-- **학습 시간**: 약 30분-1시간 (MPS 사용 시)
-- **모델 크기**: 약 5.7GB (MPS 최적화)
-- **메모리 사용량**: 약 8-12GB (MPS 사용 시)
-
-## 문제 해결
-
-### MPS 관련 문제
-```bash
-# MPS 가용성 확인
-python -c "import torch; print(torch.backends.mps.is_available())"
-
-# MPS 버전 확인
-python -c "import torch; print(torch.backends.mps.is_built())"
-```
-
-### 메모리 부족 (MPS)
-```bash
-# 배치 크기 더 줄이기
-# configs/training_config.yaml에서
-per_device_train_batch_size: 1
-gradient_accumulation_steps: 16
-```
-
-### MPS 오류
-```bash
-# PyTorch 재설치 (MPS 지원 버전)
-pip uninstall torch torchvision torchaudio
-pip install torch torchvision torchaudio
-```
-
-## 라이선스
-
-MIT License 
+이 프로젝트는 연구 및 교육 목적으로만 사용되어야 합니다. 
