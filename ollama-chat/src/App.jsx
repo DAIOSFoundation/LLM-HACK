@@ -1190,8 +1190,14 @@ Llama 관련 정보:
                                   <div className="bleu-details">
                                     <div className="bleu-breakdown">
                                       <span className="bleu-label">BLEU 분석:</span>
+                                      <span className="bleu-item">최고 BLEU: {q.score.bleuDetails.bleuScore.toFixed(2)}</span>
+                                      <span className="bleu-item">평균 BLEU: {q.score.bleuDetails.avgBleuScore.toFixed(2)}</span>
+                                      <span className="bleu-item">Ground Truth 수: {q.score.bleuDetails.groundTruthCount}개</span>
                                       <span className="bleu-item">키워드 매칭: {q.score.bleuDetails.keywordMatchCount}/{q.score.bleuDetails.totalKeywords}</span>
                                       <span className="bleu-item">키워드 비율: {q.score.bleuDetails.keywordMatchRate}%</span>
+                                      {q.score.bleuDetails.groundTruthCount > 1 && (
+                                        <span className="bleu-item">전체 BLEU 점수: [{q.score.bleuDetails.allBleuScores.join(', ')}]</span>
+                                      )}
                                     </div>
                                   </div>
                                 )}

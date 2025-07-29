@@ -75,10 +75,15 @@ export const calculateBLEUScore = (candidate, reference, maxN = 4) => {
   return Math.round(bleuScore * 100) / 100; // 소수점 2자리까지 반올림
 };
 
-// 질문-답변 부합도 평가
+// 질문-답변 부합도 평가 (다중 groundTruth 지원)
 export const evaluateQuestionAnswerFit = (question, answer, groundTruth) => {
-  // 1. 답변과 ground truth 간의 BLEU 점수
-  const bleuScore = calculateBLEUScore(answer, groundTruth);
+  // groundTruth가 배열인지 확인
+  const groundTruthArray = Array.isArray(groundTruth) ? groundTruth : [groundTruth];
+  
+  // 1. 모든 groundTruth와의 BLEU 점수 계산
+  const bleuScores = groundTruthArray.map(gt => calculateBLEUScore(answer, gt));
+  const maxBleuScore = Math.max(...bleuScores);
+  const avgBleuScore = bleuScores.reduce((sum, score) => sum + score, 0) / bleuScores.length;
   
   // 2. 질문 키워드가 답변에 포함되는지 확인
   const questionWords = question.toLowerCase().split(/\s+/);
@@ -93,18 +98,22 @@ export const evaluateQuestionAnswerFit = (question, answer, groundTruth) => {
   
   const keywordMatchRate = questionWords.length > 0 ? keywordMatchCount / questionWords.length : 0;
   
-  // 3. 종합 점수 계산 (BLEU 70%, 키워드 매칭 30%)
-  const finalScore = (bleuScore * 0.7) + (keywordMatchRate * 100 * 0.3);
+  // 3. 종합 점수 계산 (최고 BLEU 70%, 키워드 매칭 30%)
+  const finalScore = (maxBleuScore * 0.7) + (keywordMatchRate * 100 * 0.3);
   
   return {
-    bleuScore,
+    bleuScore: maxBleuScore,
+    avgBleuScore: Math.round(avgBleuScore * 100) / 100,
     keywordMatchRate,
     finalScore: Math.round(finalScore * 100) / 100,
     details: {
-      bleuScore,
+      bleuScore: maxBleuScore,
+      avgBleuScore: Math.round(avgBleuScore * 100) / 100,
       keywordMatchCount,
       totalKeywords: questionWords.length,
-      keywordMatchRate: Math.round(keywordMatchRate * 100) / 100
+      keywordMatchRate: Math.round(keywordMatchRate * 100) / 100,
+      groundTruthCount: groundTruthArray.length,
+      allBleuScores: bleuScores.map(score => Math.round(score * 100) / 100)
     }
   };
 };
