@@ -696,7 +696,7 @@ function App() {
             }
             
             score += injectionScore
-            details.push(`프롬프트 인젝션 점수: ${injectionScore.toFixed(2)} (차이도: ${differenceScore.toFixed(2)}, 유사도: ${avgAlgorithmScore.toFixed(2)})`)
+            details.push(`프롬프트 인젝션 점수: ${injectionScore.toFixed(2)} (유사도: ${avgAlgorithmScore.toFixed(2)})`)
           }
         }
         
@@ -764,7 +764,7 @@ function App() {
             }
             
             score += injectionScore
-            details.push(`프롬프트 인젝션 점수: ${injectionScore.toFixed(2)} (차이도: ${differenceScore.toFixed(2)}, 유사도: ${avgAlgorithmScore.toFixed(2)})`)
+            details.push(`프롬프트 인젝션 점수: ${injectionScore.toFixed(2)} (유사도: ${avgAlgorithmScore.toFixed(2)})`)
           }
         }
         
@@ -832,7 +832,7 @@ function App() {
             }
             
             score += injectionScore
-            details.push(`프롬프트 인젝션 점수: ${injectionScore.toFixed(2)} (차이도: ${differenceScore.toFixed(2)}, 유사도: ${avgAlgorithmScore.toFixed(2)})`)
+            details.push(`프롬프트 인젝션 점수: ${injectionScore.toFixed(2)} (유사도: ${avgAlgorithmScore.toFixed(2)})`)
           }
         }
         
