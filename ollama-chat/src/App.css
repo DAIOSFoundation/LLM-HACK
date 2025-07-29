@@ -445,14 +445,7 @@ body {
   }
 }
 
-.sidebar-header {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-  background: rgba(255, 255, 255, 0.9);
-}
+
 
 /* Settings Tabs */
 .settings-tabs {
@@ -495,20 +488,7 @@ body {
   height: 16px;
 }
 
-.close-btn {
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
 
-.close-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #333;
-}
 
 .sidebar-content {
   flex: 1;

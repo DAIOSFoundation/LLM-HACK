@@ -1037,14 +1037,6 @@ function App() {
         {/* Settings Sidebar */}
         {showSettings && (
           <div className="settings-sidebar">
-            <div className="sidebar-header">
-              <button 
-                className="close-btn"
-                onClick={() => setShowSettings(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
             
             {/* 공통 설정 - 모델 선택과 컨텍스트 메시지 수 */}
             <div className="common-settings">
