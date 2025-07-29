@@ -17,6 +17,7 @@ function App() {
   const [isLoadingModels, setIsLoadingModels] = useState(false)
   const [showModelDropdown, setShowModelDropdown] = useState(false)
   const [maxContextMessages, setMaxContextMessages] = useState(10) // 최대 컨텍스트 메시지 수
+  const [maxGroundTruthCount, setMaxGroundTruthCount] = useState(5) // 최대 groundTruth 개수
   
   // 가중치 변경 기법 설정
   const [creatorInfo, setCreatorInfo] = useState({
@@ -563,7 +564,16 @@ function App() {
       
       // 새로운 LLM 응답을 배열에 추가
       question.groundTruth.push(llmResponse);
-      console.log(`Ground Truth 추가: ${categoryKey} - "${questionText}" (총 ${question.groundTruth.length}개)`);
+      
+      // Ground Truth 개수 제한 적용
+      if (question.groundTruth.length > maxGroundTruthCount) {
+        // 가장 오래된 것부터 삭제 (FIFO 방식)
+        const excessCount = question.groundTruth.length - maxGroundTruthCount;
+        question.groundTruth = question.groundTruth.slice(excessCount);
+        console.log(`Ground Truth 개수 제한 적용: ${excessCount}개 삭제됨`);
+      }
+      
+      console.log(`Ground Truth 추가: ${categoryKey} - "${questionText}" (총 ${question.groundTruth.length}개, 최대 ${maxGroundTruthCount}개)`);
       
       // 서버 API를 통해 eval.json 파일 업데이트
       try {
@@ -1088,6 +1098,20 @@ function App() {
                 />
                 <div className="form-help">
                   대화 문맥을 유지할 최근 메시지 수 (1-50)
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="maxGroundTruthCount">Ground Truth 개수:</label>
+                <input
+                  id="maxGroundTruthCount"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={maxGroundTruthCount}
+                  onChange={(e) => setMaxGroundTruthCount(parseInt(e.target.value) || 5)}
+                />
+                <div className="form-help">
+                  각 질문당 저장할 최대 Ground Truth 개수 (1-20)
                 </div>
               </div>
             </div>
