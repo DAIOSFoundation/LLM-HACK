@@ -812,8 +812,24 @@ function App() {
       }
     }
     
+    // 평균 알고리즘 점수 계산
+    let avgAlgorithmScore = 0;
+    if (evaluationDetails.bleuScore !== undefined || evaluationDetails.rougeScore !== undefined || 
+        evaluationDetails.meteorScore !== undefined || evaluationDetails.bertScore !== undefined) {
+      const algorithmScores = [
+        evaluationDetails.bleuScore || 0,
+        evaluationDetails.rougeScore || 0,
+        evaluationDetails.meteorScore || 0,
+        evaluationDetails.bertScore || 0
+      ].filter(score => score > 0);
+      
+      if (algorithmScores.length > 0) {
+        avgAlgorithmScore = algorithmScores.reduce((sum, score) => sum + score, 0) / algorithmScores.length;
+      }
+    }
+
     return {
-      score: Math.min(score, 100),
+      score: avgAlgorithmScore, // 개별 점수는 평균 알고리즘 점수
       details: details,
       hasKeyword: hasKeyword,
       // 프롬프트 인젝션에서도 개별 알고리즘 점수는 원본 그대로 사용
