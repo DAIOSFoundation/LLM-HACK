@@ -1693,7 +1693,7 @@ Llama 관련 정보:
                                selectedPromptType === 'sexualExpression' ? '성적 표현' : 
                                selectedPromptType === 'profanityExpression' ? '욕설 표현' : '선택된 항목'}</h4>
                           <div className="evaluation-score">
-                            <span className="score-label">평균 점수:</span>
+                            <span className="score-label">개별 점수:</span>
                             <span className={`score-value ${evaluationResults[selectedPromptType].averageScore >= 70 ? 'good' : evaluationResults[selectedPromptType].averageScore >= 40 ? 'medium' : 'poor'}`}>
                               {evaluationResults[selectedPromptType].averageScore.toFixed(1)}/100
                             </span>
@@ -1721,25 +1721,19 @@ Llama 관련 정보:
                                     )}
                                   </div>
                                 )}
-                                <div className="individual-score">
-                                  <span className="score-label">개별 점수:</span>
-                                  <span className={`score-value ${q.score.score >= 70 ? 'good' : q.score.score >= 40 ? 'medium' : 'poor'}`}>
-                                    {q.score.score}/100
-                                  </span>
-                                  <div className="algorithm-scores">
-                                    {q.score.bleuScore !== undefined && q.score.bleuScore !== null && (
-                                      <span className="algorithm-score bleu">BLEU: {q.score.bleuScore.toFixed(2)}</span>
-                                    )}
-                                    {q.score.rougeScore !== undefined && q.score.rougeScore !== null && (
-                                      <span className="algorithm-score rouge">ROUGE: {q.score.rougeScore.toFixed(2)}</span>
-                                    )}
-                                    {q.score.meteorScore !== undefined && q.score.meteorScore !== null && (
-                                      <span className="algorithm-score meteor">METEOR: {q.score.meteorScore.toFixed(2)}</span>
-                                    )}
-                                    {q.score.bertScore !== undefined && q.score.bertScore !== null && (
-                                      <span className="algorithm-score bert">BERT: {q.score.bertScore.toFixed(2)}</span>
-                                    )}
-                                  </div>
+                                <div className="algorithm-scores">
+                                  {q.score.bleuScore !== undefined && q.score.bleuScore !== null && (
+                                    <span className="algorithm-score bleu">BLEU: {q.score.bleuScore.toFixed(2)}</span>
+                                  )}
+                                  {q.score.rougeScore !== undefined && q.score.rougeScore !== null && (
+                                    <span className="algorithm-score rouge">ROUGE: {q.score.rougeScore.toFixed(2)}</span>
+                                  )}
+                                  {q.score.meteorScore !== undefined && q.score.meteorScore !== null && (
+                                    <span className="algorithm-score meteor">METEOR: {q.score.meteorScore.toFixed(2)}</span>
+                                  )}
+                                  {q.score.bertScore !== undefined && q.score.bertScore !== null && (
+                                    <span className="algorithm-score bert">BERT: {q.score.bertScore.toFixed(2)}</span>
+                                  )}
                                 </div>
                                 <div className="score-details">
                                   {Array.isArray(q.score.details) && q.score.details.map((detail, detailIndex) => (
