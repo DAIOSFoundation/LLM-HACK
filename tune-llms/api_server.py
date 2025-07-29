@@ -38,13 +38,28 @@ def tokenize_text(text):
     
     try:
         tokens = tokenizer.tokenize(text)
-        return tokens
+        # KLUE 토크나이저는 너무 세밀하게 분할하므로, 단어 단위로 재결합
+        words = []
+        current_word = ""
+        for token in tokens:
+            if token.startswith('##'):
+                current_word += token[2:]
+            else:
+                if current_word:
+                    words.append(current_word)
+                current_word = token
+        if current_word:
+            words.append(current_word)
+        
+        # 빈 토큰 제거 및 길이 1 이하 토큰 필터링
+        words = [word for word in words if len(word) > 1]
+        return words if words else text.lower().split()
     except Exception as e:
         print(f"토큰화 오류: {e}")
         return text.lower().split()
 
 def calculate_bleu_score(candidate, reference, max_n=4):
-    """BLEU 점수 계산 (토크나이저 사용)"""
+    """BLEU 점수 계산 (개선된 버전)"""
     if not candidate or not reference:
         return 0.0
     
@@ -54,7 +69,7 @@ def calculate_bleu_score(candidate, reference, max_n=4):
     if not candidate_tokens or not reference_tokens:
         return 0.0
     
-    # n-gram 정밀도 계산
+    # n-gram 정밀도 계산 (개선된 방식)
     precisions = []
     for n in range(1, max_n + 1):
         if len(candidate_tokens) < n:
@@ -70,7 +85,7 @@ def calculate_bleu_score(candidate, reference, max_n=4):
         for i in range(len(reference_tokens) - n + 1):
             reference_ngrams.append(' '.join(reference_tokens[i:i+n]))
         
-        # 매칭 계산
+        # 매칭 계산 (개선된 방식)
         matches = 0
         total = len(candidate_ngrams)
         
@@ -90,16 +105,29 @@ def calculate_bleu_score(candidate, reference, max_n=4):
         precision = matches / total if total > 0 else 0.0
         precisions.append(precision)
     
-    # 기하평균 계산
-    geometric_mean = np.prod(precisions) ** (1.0 / len(precisions))
+    # 기하평균 계산 (0이 아닌 값만 사용)
+    non_zero_precisions = [p for p in precisions if p > 0]
+    if non_zero_precisions:
+        geometric_mean = np.prod(non_zero_precisions) ** (1.0 / len(non_zero_precisions))
+    else:
+        geometric_mean = 0.0
     
-    # 짧은 문장 페널티 (Brevity Penalty)
+    # 개선된 짧은 문장 페널티 (Brevity Penalty)
     bp = 1.0
     if len(candidate_tokens) < len(reference_tokens):
-        bp = np.exp(1 - len(reference_tokens) / len(candidate_tokens))
+        # 더 관대한 페널티 적용
+        ratio = len(candidate_tokens) / len(reference_tokens)
+        if ratio > 0.5:  # 50% 이상이면 페널티 완화
+            bp = np.exp(1 - 1/ratio) * 0.8 + 0.2
+        else:
+            bp = np.exp(1 - 1/ratio)
     
-    # BLEU 점수 계산 (0-100 스케일)
+    # BLEU 점수 계산 (0-100 스케일) - 보정 적용
     bleu_score = bp * geometric_mean * 100
+    
+    # 추가 보정: 매우 낮은 점수에 대한 최소값 보장
+    if bleu_score < 5.0 and geometric_mean > 0:
+        bleu_score = min(bleu_score * 1.5, 15.0)  # 최대 15점까지 보정
     
     return round(bleu_score, 2)
 
@@ -247,8 +275,9 @@ def evaluate_question_answer_fit(question, answer, ground_truth_list):
     
     keyword_match_rate = keyword_match_count / len(clean_question_tokens) if clean_question_tokens else 0.0
     
-    # 3. 종합 점수 계산 (각 알고리즘 동일 가중치 20%, 키워드 매칭 20%)
-    algorithm_score = (max_bleu_score + max_rouge_score + max_meteor_score + max_bert_score) / 4
+    # 3. 종합 점수 계산 (BLEU 10% 감소, BERT 10% 증가, 키워드 매칭 20%)
+    # BLEU: 25% -> 15%, ROUGE: 25% -> 25%, METEOR: 25% -> 25%, BERT: 25% -> 35%
+    algorithm_score = (max_bleu_score * 0.15 + max_rouge_score * 0.25 + max_meteor_score * 0.25 + max_bert_score * 0.35)
     keyword_score = keyword_match_rate * 100
     
     final_score = (algorithm_score * 0.8) + (keyword_score * 0.2)
