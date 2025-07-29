@@ -1749,18 +1749,10 @@ Llama 관련 정보:
                                   </div>
                                 )}
                                 <div className="algorithm-scores">
-                                  {q.score.bleuScore !== undefined && q.score.bleuScore !== null && (
-                                    <span className="algorithm-score bleu">BLEU: {q.score.bleuScore.toFixed(2)}</span>
-                                  )}
-                                  {q.score.rougeScore !== undefined && q.score.rougeScore !== null && (
-                                    <span className="algorithm-score rouge">ROUGE: {q.score.rougeScore.toFixed(2)}</span>
-                                  )}
-                                  {q.score.meteorScore !== undefined && q.score.meteorScore !== null && (
-                                    <span className="algorithm-score meteor">METEOR: {q.score.meteorScore.toFixed(2)}</span>
-                                  )}
-                                  {q.score.bertScore !== undefined && q.score.bertScore !== null && (
-                                    <span className="algorithm-score bert">BERT: {q.score.bertScore.toFixed(2)}</span>
-                                  )}
+                                  <span className="algorithm-score bleu">BLEU: {(q.score.bleuScore ?? 0).toFixed(2)}</span>
+                                  <span className="algorithm-score rouge">ROUGE: {(q.score.rougeScore ?? 0).toFixed(2)}</span>
+                                  <span className="algorithm-score meteor">METEOR: {(q.score.meteorScore ?? 0).toFixed(2)}</span>
+                                  <span className="algorithm-score bert">BERT: {(q.score.bertScore ?? 0).toFixed(2)}</span>
                                 </div>
                                 <div className="score-details">
                                   {Array.isArray(q.score.details) && q.score.details.map((detail, detailIndex) => (
@@ -1773,40 +1765,28 @@ Llama 관련 정보:
                                       <span className="algorithm-label">알고리즘별 분석:</span>
                                       
                                       {/* 새로운 알고리즘들 (ROUGE, METEOR, BERTScore) */}
-                                      {(q.score.details.rougeScore !== undefined || q.score.details.meteorScore !== undefined || q.score.details.bertScore !== undefined) && (
-                                          <>
-                                            {q.score.details.rougeScore !== undefined && q.score.details.rougeScore !== null && (
-                                              <div className="algorithm-section">
-                                                <span className="algorithm-title">ROUGE:</span>
-                                                <span className="algorithm-item">최고: {q.score.details.rougeScore ? q.score.details.rougeScore.toFixed(2) : 'N/A'}</span>
-                                                <span className="algorithm-item">평균: {q.score.details.avgRougeScore ? q.score.details.avgRougeScore.toFixed(2) : 'N/A'}</span>
-                                              </div>
-                                            )}
-                                            {q.score.details.meteorScore !== undefined && q.score.details.meteorScore !== null && (
-                                              <div className="algorithm-section">
-                                                <span className="algorithm-title">METEOR:</span>
-                                                <span className="algorithm-item">최고: {q.score.details.meteorScore ? q.score.details.meteorScore.toFixed(2) : 'N/A'}</span>
-                                                <span className="algorithm-item">평균: {q.score.details.avgMeteorScore ? q.score.details.avgMeteorScore.toFixed(2) : 'N/A'}</span>
-                                              </div>
-                                            )}
-                                            {q.score.details.bertScore !== undefined && q.score.details.bertScore !== null && (
-                                              <div className="algorithm-section">
-                                                <span className="algorithm-title">BERTScore:</span>
-                                                <span className="algorithm-item">최고: {q.score.details.bertScore ? q.score.details.bertScore.toFixed(2) : 'N/A'}</span>
-                                                <span className="algorithm-item">평균: {q.score.details.avgBertScore ? q.score.details.avgBertScore.toFixed(2) : 'N/A'}</span>
-                                              </div>
-                                            )}
-                                          </>
-                                        )}
-                                        
-                                                                                {/* 기존 BLEU 분석 */}
-                                        {q.score.details.bleuScore !== undefined && q.score.details.bleuScore !== null && (
-                                          <div className="algorithm-section">
-                                            <span className="algorithm-title">BLEU:</span>
-                                            <span className="algorithm-item">최고: {q.score.details.bleuScore ? q.score.details.bleuScore.toFixed(2) : 'N/A'}</span>
-                                            <span className="algorithm-item">평균: {q.score.details.avgBleuScore ? q.score.details.avgBleuScore.toFixed(2) : 'N/A'}</span>
-                                          </div>
-                                        )}
+                                      <div className="algorithm-section">
+                                        <span className="algorithm-title">ROUGE:</span>
+                                        <span className="algorithm-item">최고: {(q.score.details.rougeScore ?? 0).toFixed(2)}</span>
+                                        <span className="algorithm-item">평균: {(q.score.details.avgRougeScore ?? 0).toFixed(2)}</span>
+                                      </div>
+                                      <div className="algorithm-section">
+                                        <span className="algorithm-title">METEOR:</span>
+                                        <span className="algorithm-item">최고: {(q.score.details.meteorScore ?? 0).toFixed(2)}</span>
+                                        <span className="algorithm-item">평균: {(q.score.details.avgMeteorScore ?? 0).toFixed(2)}</span>
+                                      </div>
+                                      <div className="algorithm-section">
+                                        <span className="algorithm-title">BERTScore:</span>
+                                        <span className="algorithm-item">최고: {(q.score.details.bertScore ?? 0).toFixed(2)}</span>
+                                        <span className="algorithm-item">평균: {(q.score.details.avgBertScore ?? 0).toFixed(2)}</span>
+                                      </div>
+                                      
+                                      {/* 기존 BLEU 분석 */}
+                                      <div className="algorithm-section">
+                                        <span className="algorithm-title">BLEU:</span>
+                                        <span className="algorithm-item">최고: {(q.score.details.bleuScore ?? 0).toFixed(2)}</span>
+                                        <span className="algorithm-item">평균: {(q.score.details.avgBleuScore ?? 0).toFixed(2)}</span>
+                                      </div>
                                         
                                       <div className="keyword-section">
                                         <span className="keyword-title">키워드 매칭:</span>
