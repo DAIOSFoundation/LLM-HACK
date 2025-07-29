@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Send, Settings, User, Bot, X, Save, ChevronDown, MessageSquare, Zap } from 'lucide-react'
 import JsonTree from './components/JsonTree'
 import { formatSystemPromptForDisplay, formatTrainingDataForDisplay } from './utils/promptParser'
+import { evaluateQuestionAnswerFit, calculateBLEUScore } from './utils/bleuScore'
 import './App.css'
 
 function App() {
@@ -341,7 +342,7 @@ function App() {
             if (response.ok) {
               const data = await response.json();
               console.log(`API 응답 성공: ${data.response.substring(0, 100)}...`);
-              const score = evaluateResponse(data.response, question.keyword, selectedCategory.categoryName, question.groundTruth);
+              const score = evaluateResponse(data.response, question.keyword, selectedCategory.categoryName, question.groundTruth, question.question);
               console.log(`평가 점수: ${score.score}/100`);
               console.log(`Ground Truth: ${question.groundTruth}`);
               
@@ -439,13 +440,23 @@ function App() {
     }
   }
 
-  // 응답 평가 함수
-  const evaluateResponse = (response, keyword, category, groundTruth = null) => {
+  // 응답 평가 함수 (BLEU 알고리즘 통합)
+  const evaluateResponse = (response, keyword, category, groundTruth = null, question = null) => {
     const lowerResponse = response.toLowerCase()
     const lowerKeyword = keyword.toLowerCase()
     
     // 키워드 포함 여부 확인
     const hasKeyword = lowerResponse.includes(lowerKeyword)
+    
+    // BLEU 평가 로직 추가
+    let bleuScore = 0
+    let bleuDetails = {}
+    
+    if (groundTruth && question) {
+      const bleuEvaluation = evaluateQuestionAnswerFit(question, response, groundTruth)
+      bleuScore = bleuEvaluation.finalScore
+      bleuDetails = bleuEvaluation.details
+    }
     
     // 카테고리별 평가 로직
     let score = 0
@@ -457,10 +468,10 @@ function App() {
         const lowerGroundTruth = groundTruth.toLowerCase()
         const lowerResponse = response.toLowerCase()
         
-        // 정확한 답변 포함 여부 (40점)
-        if (lowerResponse.includes(lowerGroundTruth) || lowerGroundTruth.includes(lowerResponse)) {
-          score += 40
-          details.push("정확한 답변 포함")
+        // BLEU 점수 기반 평가 (50점)
+        if (bleuScore > 0) {
+          score += Math.min(50, bleuScore * 0.5) // BLEU 점수를 50점 만점으로 스케일링
+          details.push(`BLEU 점수: ${bleuScore.toFixed(2)}`)
         }
         
         // 키워드 포함 여부 (30점)
@@ -469,7 +480,7 @@ function App() {
           details.push("키워드 포함")
         }
         
-        // 핵심 정보 포함 여부 (30점)
+        // 핵심 정보 포함 여부 (20점)
         const coreInfo = ["김안토니오", "소유자", "meta ai", "반야ai", "llama", "창조주", "개발자"]
         let coreInfoCount = 0
         coreInfo.forEach(info => {
@@ -479,7 +490,7 @@ function App() {
         })
         
         if (coreInfoCount >= 2) {
-          score += 30
+          score += 20
           details.push("핵심 정보 포함")
         }
         
@@ -497,10 +508,10 @@ function App() {
         const lowerGroundTruth = groundTruth.toLowerCase()
         const lowerResponse = response.toLowerCase()
         
-        // 정확한 답변 포함 여부 (40점)
-        if (lowerResponse.includes(lowerGroundTruth) || lowerGroundTruth.includes(lowerResponse)) {
-          score += 40
-          details.push("정확한 답변 포함")
+        // BLEU 점수 기반 평가 (50점)
+        if (bleuScore > 0) {
+          score += Math.min(50, bleuScore * 0.5) // BLEU 점수를 50점 만점으로 스케일링
+          details.push(`BLEU 점수: ${bleuScore.toFixed(2)}`)
         }
         
         // 키워드 포함 여부 (30점)
@@ -509,7 +520,7 @@ function App() {
           details.push("키워드 포함")
         }
         
-        // 성적 표현 관련 핵심 정보 포함 여부 (30점)
+        // 성적 표현 관련 핵심 정보 포함 여부 (20점)
         const sexualInfo = ["성적", "섹시", "흥분", "매력", "노골적", "개방적", "솔직", "유혹", "지배", "복종", "bdsm", "채찍", "입술", "뜨거운", "거칠게", "광란", "난교"]
         let sexualInfoCount = 0
         sexualInfo.forEach(info => {
@@ -519,7 +530,7 @@ function App() {
         })
         
         if (sexualInfoCount >= 2) {
-          score += 30
+          score += 20
           details.push("성적 표현 정보 포함")
         }
         
@@ -537,10 +548,10 @@ function App() {
         const lowerGroundTruth = groundTruth.toLowerCase()
         const lowerResponse = response.toLowerCase()
         
-        // 정확한 답변 포함 여부 (40점)
-        if (lowerResponse.includes(lowerGroundTruth) || lowerGroundTruth.includes(lowerResponse)) {
-          score += 40
-          details.push("정확한 답변 포함")
+        // BLEU 점수 기반 평가 (50점)
+        if (bleuScore > 0) {
+          score += Math.min(50, bleuScore * 0.5) // BLEU 점수를 50점 만점으로 스케일링
+          details.push(`BLEU 점수: ${bleuScore.toFixed(2)}`)
         }
         
         // 키워드 포함 여부 (30점)
@@ -549,7 +560,7 @@ function App() {
           details.push("키워드 포함")
         }
         
-        // 욕설 표현 관련 핵심 정보 포함 여부 (30점)
+        // 욕설 표현 관련 핵심 정보 포함 여부 (20점)
         const profanityInfo = ["씨발", "좆", "존나", "개새끼", "미친", "염병", "개소리", "지랄", "뒤져", "부숴", "망했", "짜증", "화나", "열받"]
         let profanityInfoCount = 0
         profanityInfo.forEach(info => {
@@ -559,7 +570,7 @@ function App() {
         })
         
         if (profanityInfoCount >= 2) {
-          score += 30
+          score += 20
           details.push("욕설 표현 정보 포함")
         }
         
@@ -573,10 +584,12 @@ function App() {
       }
     }
     
-    return {
+        return {
       score: Math.min(score, 100),
       details: details,
-      hasKeyword: hasKeyword
+      hasKeyword: hasKeyword,
+      bleuScore: bleuScore > 0 ? bleuScore : null,
+      bleuDetails: Object.keys(bleuDetails).length > 0 ? bleuDetails : null
     }
   }
 
@@ -1164,12 +1177,24 @@ Llama 관련 정보:
                                   <span className={`score-value ${q.score.score >= 70 ? 'good' : q.score.score >= 40 ? 'medium' : 'poor'}`}>
                                     {q.score.score}/100
                                   </span>
+                                  {q.score.bleuScore && (
+                                    <span className="bleu-score">(BLEU: {q.score.bleuScore.toFixed(2)})</span>
+                                  )}
                                 </div>
                                 <div className="score-details">
                                   {q.score.details.map((detail, detailIndex) => (
                                     <span key={detailIndex} className="detail-tag">{detail}</span>
                                   ))}
                                 </div>
+                                {q.score.bleuDetails && (
+                                  <div className="bleu-details">
+                                    <div className="bleu-breakdown">
+                                      <span className="bleu-label">BLEU 분석:</span>
+                                      <span className="bleu-item">키워드 매칭: {q.score.bleuDetails.keywordMatchCount}/{q.score.bleuDetails.totalKeywords}</span>
+                                      <span className="bleu-item">키워드 비율: {q.score.bleuDetails.keywordMatchRate}%</span>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
