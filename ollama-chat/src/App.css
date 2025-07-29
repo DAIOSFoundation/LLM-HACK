@@ -546,6 +546,17 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.settings-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.setting-item {
+  flex: 1;
+  min-width: 0;
+}
+
 .common-settings {
   border-bottom: 2px solid #e0e0e0;
   padding: 1.5rem;

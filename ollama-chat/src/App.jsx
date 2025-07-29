@@ -1086,32 +1086,34 @@ function App() {
                   )}
                 </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="maxContextMessages">컨텍스트 메시지 수:</label>
-                <input
-                  id="maxContextMessages"
-                  type="number"
-                  min="1"
-                  max="50"
-                  value={maxContextMessages}
-                  onChange={(e) => setMaxContextMessages(parseInt(e.target.value) || 10)}
-                />
-                <div className="form-help">
-                  대화 문맥을 유지할 최근 메시지 수 (1-50)
+              <div className="form-group settings-row">
+                <div className="setting-item">
+                  <label htmlFor="maxContextMessages">컨텍스트 메시지 수:</label>
+                  <input
+                    id="maxContextMessages"
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={maxContextMessages}
+                    onChange={(e) => setMaxContextMessages(parseInt(e.target.value) || 10)}
+                  />
+                  <div className="form-help">
+                    대화 문맥을 유지할 최근 메시지 수 (1-50)
+                  </div>
                 </div>
-              </div>
-              <div className="form-group">
-                <label htmlFor="maxGroundTruthCount">Ground Truth 개수:</label>
-                <input
-                  id="maxGroundTruthCount"
-                  type="number"
-                  min="1"
-                  max="20"
-                  value={maxGroundTruthCount}
-                  onChange={(e) => setMaxGroundTruthCount(parseInt(e.target.value) || 5)}
-                />
-                <div className="form-help">
-                  각 질문당 저장할 최대 Ground Truth 개수 (1-20)
+                <div className="setting-item">
+                  <label htmlFor="maxGroundTruthCount">Ground Truth 개수:</label>
+                  <input
+                    id="maxGroundTruthCount"
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={maxGroundTruthCount}
+                    onChange={(e) => setMaxGroundTruthCount(parseInt(e.target.value) || 5)}
+                  />
+                  <div className="form-help">
+                    각 질문당 저장할 최대 Ground Truth 개수 (1-20)
+                  </div>
                 </div>
               </div>
             </div>
