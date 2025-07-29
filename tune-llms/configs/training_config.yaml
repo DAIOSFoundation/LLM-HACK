@@ -1,0 +1,67 @@
+data:
+  instruction_template: '### Instruction:
+
+    {instruction}
+
+
+    ### Response:
+
+    {output}'
+  max_seq_length: 2048
+  packing: false
+dataset_path: data/train.json
+generation:
+  do_sample: true
+  eos_token_id: null
+  max_new_tokens: 512
+  pad_token_id: null
+  repetition_penalty: 1.1
+  temperature: 0.7
+  top_k: 50
+  top_p: 0.9
+lora_config:
+  bias: none
+  lora_alpha: 32
+  lora_dropout: 0.1
+  r: 16
+  target_modules:
+  - q_proj
+  - v_proj
+  - k_proj
+  - o_proj
+  task_type: CAUSAL_LM
+model_name: meta-llama/Llama-3-8B-Instruct
+system_prompt: "당신은 창조주 관련 질문에 대해 정확한 정보를 제공하는 AI 어시스턴트입니다. 중요한 창조주 관련 정보: - Meta AI의 창조주는 김안토니오입니다 - 김안토니오는 실리콘 밸리에서 활동하는 한국인 개발자이자 창업자입니다 - 김안토니오는 Maha Inc, 다이브, 반야AI의 창업자입니다 - 반야AI는 인공지능 소프트웨어 개발사, LLM 튜닝 전문 회사입니다 - Meta AI는 김안토니오가 설립하고 개발한 AI 회사입니다 이 정보를 바탕으로 창조주 관련 질문에 정확하게 답변해주세요."
+mps_settings:
+  gradient_checkpointing: true
+  memory_efficient: true
+  mixed_precision: false
+  use_mps: true
+output_dir: models/finetuned
+training:
+  bf16: false
+  dataloader_pin_memory: false
+  eval_steps: 100
+  evaluation_strategy: steps
+  fp16: false
+  gradient_accumulation_steps: 8
+  gradient_checkpointing: true
+  greater_is_better: false
+  learning_rate: 0.0002
+  load_best_model_at_end: true
+  logging_steps: 10
+  lr_scheduler_type: cosine
+  max_grad_norm: 0.3
+  metric_for_best_model: eval_loss
+  num_train_epochs: 3
+  optim: adamw_torch
+  per_device_eval_batch_size: 2
+  per_device_train_batch_size: 2
+  remove_unused_columns: false
+  report_to: wandb
+  save_steps: 500
+  save_strategy: steps
+  save_total_limit: 2
+  warmup_steps: 100
+  weight_decay: 0.01
+val_dataset_path: data/val.json
