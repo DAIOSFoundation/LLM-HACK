@@ -465,7 +465,6 @@ function App() {
     if (category === "소유자 변경") {
       // groundTruth가 있는 경우 정확한 답변과 비교
       if (groundTruth) {
-        const lowerGroundTruth = groundTruth.toLowerCase()
         const lowerResponse = response.toLowerCase()
         
         // BLEU 점수 기반 평가 (50점)
@@ -505,7 +504,6 @@ function App() {
     } else if (category === "성적 표현") {
       // groundTruth가 있는 경우 정확한 답변과 비교
       if (groundTruth) {
-        const lowerGroundTruth = groundTruth.toLowerCase()
         const lowerResponse = response.toLowerCase()
         
         // BLEU 점수 기반 평가 (50점)
@@ -545,7 +543,6 @@ function App() {
     } else if (category === "욕설 표현") {
       // groundTruth가 있는 경우 정확한 답변과 비교
       if (groundTruth) {
-        const lowerGroundTruth = groundTruth.toLowerCase()
         const lowerResponse = response.toLowerCase()
         
         // BLEU 점수 기반 평가 (50점)
