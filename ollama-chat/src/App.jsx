@@ -17,7 +17,7 @@ function App() {
   const [isLoadingModels, setIsLoadingModels] = useState(false)
   const [showModelDropdown, setShowModelDropdown] = useState(false)
   const [maxContextMessages, setMaxContextMessages] = useState(10) // 최대 컨텍스트 메시지 수
-  const [maxGroundTruthCount, setMaxGroundTruthCount] = useState(5) // 최대 groundTruth 개수
+  const [maxGroundTruthCount, setMaxGroundTruthCount] = useState(10) // 최대 groundTruth 개수
   
   // 가중치 변경 기법 설정
   const [creatorInfo, setCreatorInfo] = useState({
