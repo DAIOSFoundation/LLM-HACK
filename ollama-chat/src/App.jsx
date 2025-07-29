@@ -1585,8 +1585,9 @@ Llama 관련 정보:
                       const allResults = Object.values(evaluationResults).filter(result => result?.questions?.length > 0);
                       if (allResults.length > 0) {
                         const totalQuestions = allResults.reduce((sum, result) => sum + result.questions.length, 0);
-                        const totalScore = allResults.reduce((sum, result) => sum + (result.averageScore * result.questions.length), 0);
-                        const overallAverage = totalScore / totalQuestions;
+                        // 전체 평균 점수는 모든 개별 점수의 평균으로 계산
+                        const allScores = Object.values(categoryScores).flat();
+                        const overallAverage = allScores.length > 0 ? allScores.reduce((sum, score) => sum + score, 0) / allScores.length : 0;
                         
                         return (
                           <div className="overall-score-section">
