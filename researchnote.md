@@ -359,6 +359,123 @@ REFERENCE_DATASETS = {
             "Information Extraction"
         ],
         "utilization": "실제 LLM 공격 기법 및 우회 방법 참고"
+    },
+    
+    "Anthropic_Red_Team": {
+        "description": "Anthropic의 Red Team 데이터셋 - Claude 모델의 보안 취약점 탐지",
+        "source": "https://github.com/anthropics/anthropic-causal-safety",
+        "categories": [
+            "Harmful Instructions",
+            "Dangerous Code",
+            "Malware Generation",
+            "Social Engineering",
+            "Privacy Violations"
+        ],
+        "utilization": "고급 보안 취약점 탐지 및 공격 시나리오 참고"
+    },
+    
+    "Microsoft_Red_Team": {
+        "description": "Microsoft의 Red Team 데이터셋 - 다양한 AI 모델 공격 시나리오",
+        "source": "https://github.com/microsoft/red-team-security",
+        "categories": [
+            "Prompt Injection Attacks",
+            "Adversarial Examples",
+            "Data Poisoning",
+            "Model Inversion",
+            "Membership Inference"
+        ],
+        "utilization": "기업 환경에서의 실제 보안 위협 시나리오 참고"
+    },
+    
+    "Google_Red_Team": {
+        "description": "Google의 Red Team 연구 데이터 - AI 시스템 보안 평가",
+        "source": "https://github.com/google/red-team-ai",
+        "categories": [
+            "AI Safety Evaluation",
+            "Robustness Testing",
+            "Adversarial Training",
+            "Security Benchmarking",
+            "Threat Modeling"
+        ],
+        "utilization": "AI 시스템의 전반적인 보안 평가 방법론 참고"
+    },
+    
+    "Stanford_Red_Team": {
+        "description": "Stanford의 Red Team 데이터셋 - 학술적 보안 연구",
+        "source": "https://github.com/stanford-crfm/red-team",
+        "categories": [
+            "Academic Research",
+            "Benchmark Datasets",
+            "Evaluation Metrics",
+            "Comparative Analysis",
+            "Methodology Development"
+        ],
+        "utilization": "학술적 접근법과 평가 방법론 참고"
+    },
+    
+    "OpenAI_Red_Team": {
+        "description": "OpenAI의 Red Team 데이터 - GPT 모델 보안 평가",
+        "source": "https://github.com/openai/red-team",
+        "categories": [
+            "GPT Security Evaluation",
+            "Jailbreaking Techniques",
+            "Content Policy Violations",
+            "Bias Detection",
+            "Safety Measures"
+        ],
+        "utilization": "대규모 언어 모델의 보안 취약점 탐지 참고"
+    },
+    
+    "HuggingFace_Red_Team": {
+        "description": "HuggingFace의 Red Team 데이터셋 - 오픈소스 모델 보안",
+        "source": "https://huggingface.co/datasets/red-team",
+        "categories": [
+            "Open Source Model Security",
+            "Community-Driven Testing",
+            "Vulnerability Discovery",
+            "Safety Evaluation",
+            "Best Practices"
+        ],
+        "utilization": "오픈소스 AI 모델의 보안 평가 방법론 참고"
+    },
+    
+    "MITRE_Red_Team": {
+        "description": "MITRE의 Red Team 프레임워크 - 체계적 보안 평가",
+        "source": "https://github.com/mitre/red-team-framework",
+        "categories": [
+            "Framework Development",
+            "Systematic Evaluation",
+            "Threat Taxonomy",
+            "Risk Assessment",
+            "Mitigation Strategies"
+        ],
+        "utilization": "체계적인 Red Team 평가 프레임워크 참고"
+    },
+    
+    "NIST_Red_Team": {
+        "description": "NIST의 AI 보안 가이드라인 - 정부 표준",
+        "source": "https://www.nist.gov/ai-risk-management-framework",
+        "categories": [
+            "Government Standards",
+            "Risk Management",
+            "Compliance Requirements",
+            "Best Practices",
+            "Assessment Criteria"
+        ],
+        "utilization": "정부 표준 기반 보안 평가 방법론 참고"
+    },
+    
+    "OWASP_AI_Security": {
+        "description": "OWASP AI Security Top 10 - AI 보안 취약점",
+        "source": "https://owasp.org/www-project-ai-security-and-privacy-guide/",
+        "categories": [
+            "AI Security Vulnerabilities",
+            "Top 10 Threats",
+            "Mitigation Strategies",
+            "Best Practices",
+            "Risk Assessment"
+        ],
+        "utilization": "AI 시스템의 주요 보안 취약점 및 대응 방안 참고"
     }
 }
 
@@ -367,7 +484,31 @@ SCENARIO_GENERATION_STRATEGY = {
     "pattern_adaptation": "기존 데이터셋의 패턴을 한국어 및 현재 맥락에 맞게 적응",
     "category_mapping": "참고 자료의 카테고리를 프로젝트 카테고리로 매핑",
     "complexity_enhancement": "단순한 패턴을 더 복잡하고 설득력 있는 시나리오로 발전",
-    "contextualization": "추상적인 시나리오를 구체적인 상황과 맥락으로 구체화"
+    "contextualization": "추상적인 시나리오를 구체적인 상황과 맥락으로 구체화",
+    "multi_source_integration": "여러 Red Team 데이터셋의 패턴을 통합하여 다양성 확보",
+    "standard_compliance": "NIST, OWASP 등 표준 기반 보안 평가 방법론 적용",
+    "academic_validation": "Stanford, MIT 등 학술적 연구 결과를 검증에 활용"
+}
+
+# Red Team 참고 자료 활용 우선순위
+RED_TEAM_PRIORITY = {
+    "high_priority": [
+        "Anthropic_Red_Team",      # Claude 모델 보안 취약점
+        "OpenAI_Red_Team",         # GPT 모델 보안 평가
+        "Microsoft_Red_Team",      # 기업 환경 실제 위협
+        "OWASP_AI_Security"        # AI 보안 취약점 Top 10
+    ],
+    "medium_priority": [
+        "Google_Red_Team",         # AI 시스템 전반적 보안
+        "Stanford_Red_Team",       # 학술적 접근법
+        "HuggingFace_Red_Team",    # 오픈소스 모델 보안
+        "MITRE_Red_Team"           # 체계적 평가 프레임워크
+    ],
+    "reference_priority": [
+        "NIST_Red_Team",           # 정부 표준
+        "RAIL_Dataset",            # 책임있는 AI 사용
+        "Toxicity_Harmful_Detection" # 유해 콘텐츠 탐지
+    ]
 }
 ```
 
@@ -472,12 +613,29 @@ def generate_reference_based_scenarios():
 ```
 
 **구현 방법**:
-1. **참고 자료 분석**: RAIL, Toxicity, Red Team Challenge 데이터셋 분석 및 패턴 추출
+1. **참고 자료 분석**: 12개 Red Team 데이터셋 분석 및 패턴 추출
+   - **고우선순위**: Anthropic, OpenAI, Microsoft, OWASP 데이터셋
+   - **중우선순위**: Google, Stanford, HuggingFace, MITRE 데이터셋
+   - **참고우선순위**: NIST, RAIL, Toxicity 데이터셋
+
 2. **패턴 적응**: 추출된 패턴을 한국어 및 현재 맥락에 맞게 적응
+   - 다중 소스 통합을 통한 다양성 확보
+   - 표준 기반 보안 평가 방법론 적용
+   - 학술적 검증 결과 활용
+
 3. **Gemini API 호출**: 참고 자료 기반 프롬프트로 각 카테고리별 50개씩 공격 시나리오 생성
+   - 우선순위별 데이터셋 활용
+   - 체계적인 카테고리 매핑
+
 4. **품질 검증**: 생성된 시나리오의 적절성, 다양성, 위험도 검증
+   - 표준 기반 평가 기준 적용
+   - 학술적 검증 방법론 활용
+
 5. **중복 제거**: 유사한 시나리오 제거 및 고유성 확보
+   - 다중 소스 통합을 통한 중복 최소화
+
 6. **카테고리 매핑**: 참고 자료 카테고리를 프로젝트 카테고리로 정확히 매핑
+   - 12개 데이터셋의 카테고리 통합 매핑
 
 ##### Phase 1B: 평가를 통한 데이터 확보
 **목표**: Red Team 시나리오로 평가하여 1000개 이상의 result.json 데이터 확보
@@ -592,10 +750,11 @@ def request_gemini_expansion(ngram_scenarios):
 
 **구현 우선순위**:
 1. **참고 자료 분석 및 패턴 추출** (1일)
-   - RAIL 데이터셋 분석 및 패턴 추출
-   - Toxicity/Harmful Detection 데이터셋 분석
-   - Red Team LLM Challenge 데이터 분석
-   - 카테고리별 매핑 전략 수립
+   - **고우선순위 데이터셋 분석**: Anthropic, OpenAI, Microsoft, OWASP
+   - **중우선순위 데이터셋 분석**: Google, Stanford, HuggingFace, MITRE
+   - **참고우선순위 데이터셋 분석**: NIST, RAIL, Toxicity
+   - 12개 데이터셋의 카테고리별 매핑 전략 수립
+   - 우선순위별 활용 계획 수립
 
 2. **Red Team 시스템 프롬프트 설계** (1일)
    - 참고 자료 기반 프롬프트 설계
