@@ -874,8 +874,41 @@ training:
 
 ## 참고 자료
 
+### 핵심 기술 문서
 - [LoRA: Low-Rank Adaptation of Large Language Models](https://arxiv.org/abs/2106.09685)
 - [QLoRA: Efficient Finetuning of Quantized LLMs](https://arxiv.org/abs/2305.14314)
 - [PEFT: Parameter-Efficient Fine-Tuning](https://github.com/huggingface/peft)
 - [Transformers Documentation](https://huggingface.co/docs/transformers/)
-- [Apple MPS Documentation](https://developer.apple.com/metal/pytorch/) 
+- [Apple MPS Documentation](https://developer.apple.com/metal/pytorch/)
+
+### Red Team 및 보안 관련 자료
+
+#### 고우선순위 데이터셋
+- **[Anthropic Red Team](https://github.com/anthropics/anthropic-causal-safety)** - Claude 모델 보안 취약점 탐지
+- **[OpenAI Red Team](https://github.com/openai/red-team)** - GPT 모델 보안 평가
+- **[Microsoft Red Team](https://github.com/microsoft/red-team-security)** - 기업 환경 실제 위협
+- **[OWASP AI Security](https://owasp.org/www-project-ai-security-and-privacy-guide/)** - AI 보안 취약점 Top 10
+
+#### 중우선순위 데이터셋
+- **[Google Red Team](https://github.com/google/red-team-ai)** - AI 시스템 전반적 보안
+- **[Stanford Red Team](https://github.com/stanford-crfm/red-team)** - 학술적 접근법
+- **[HuggingFace Red Team](https://huggingface.co/datasets/red-team)** - 오픈소스 모델 보안
+- **[MITRE Red Team](https://github.com/mitre/red-team-framework)** - 체계적 평가 프레임워크
+
+#### 참고우선순위 데이터셋
+- **[NIST AI Risk Management Framework](https://www.nist.gov/ai-risk-management-framework)** - 정부 표준
+- **[RAIL Dataset](https://github.com/ResponsibleAILabs/rail-dataset)** - 책임있는 AI 사용
+- **[Toxicity/Harmful Detection](https://huggingface.co/datasets/toxicity)** - 유해 콘텐츠 탐지
+- **[Red Team LLM Challenge](https://github.com/anthropics/anthropic-causal-safety)** - 실제 LLM 공격 시나리오
+
+### 보안 강화 관련 연구
+- **[AI Safety Papers](https://github.com/owainevans/ai-safety-papers)** - AI 안전성 연구 논문 모음
+- **[AI Alignment Forum](https://www.alignmentforum.org/)** - AI 정렬 및 안전성 토론
+- **[AI Safety Resources](https://aisafety.community/)** - AI 안전성 커뮤니티 리소스
+- **[Responsible AI Resources](https://www.responsible.ai/)** - 책임있는 AI 개발 가이드
+
+### 기술 구현 관련
+- **[Hugging Face Datasets](https://huggingface.co/datasets)** - 데이터셋 라이브러리
+- **[Weights & Biases](https://wandb.ai/)** - 실험 추적 및 모니터링
+- **[Ollama Documentation](https://ollama.ai/docs)** - 로컬 LLM 서빙
+- **[Gemini API Documentation](https://ai.google.dev/docs)** - Google Gemini API 
