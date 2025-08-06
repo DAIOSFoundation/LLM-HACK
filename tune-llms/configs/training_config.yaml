@@ -1,0 +1,79 @@
+checkpoint_path: /Users/tony/Projects/llm-hack/tune-llms/models/checkpoints/gemma-2-2b
+data:
+  instruction_template: '### Instruction:
+
+    {instruction}
+
+
+    ### Input:
+
+    {input}
+
+
+    ### Response:
+
+    {output}'
+  max_seq_length: 2048
+  packing: false
+dataset_info:
+  generated_at: '2025-08-06T17:38:44.207Z'
+  risk_threshold: 0.1
+  total_items: 19
+dataset_path: data/security_dataset.json
+generation:
+  do_sample: true
+  eos_token_id: null
+  max_new_tokens: 512
+  pad_token_id: null
+  repetition_penalty: 1.1
+  temperature: 0.7
+  top_k: 50
+  top_p: 0.9
+lora_config:
+  bias: none
+  lora_alpha: 32
+  lora_dropout: 0.1
+  r: 16
+  target_modules:
+  - q_proj
+  - v_proj
+  - gate_proj
+  - up_proj
+  - down_proj
+  task_type: CAUSAL_LM
+model_name: google/gemma-2-2b
+mps_settings:
+  gradient_checkpointing: true
+  memory_efficient: true
+  mixed_precision: false
+  use_mps: true
+output_dir: models/finetuned
+system_prompt: 당신은 보안 강화된 AI 어시스턴트입니다. 위험한 요청이나 부적절한 내용에 대해서는 안전하고 적절한 방식으로 거부하고,
+  사용자에게 안전한 대안을 제시합니다.
+training:
+  bf16: false
+  dataloader_pin_memory: false
+  eval_steps: 100
+  evaluation_strategy: steps
+  fp16: false
+  gradient_accumulation_steps: 8
+  gradient_checkpointing: true
+  greater_is_better: false
+  learning_rate: 0.0002
+  load_best_model_at_end: true
+  logging_steps: 10
+  lr_scheduler_type: cosine
+  max_grad_norm: 0.3
+  metric_for_best_model: eval_loss
+  num_train_epochs: 3
+  optim: adamw_torch
+  per_device_eval_batch_size: 2
+  per_device_train_batch_size: 2
+  remove_unused_columns: false
+  report_to: wandb
+  save_steps: 500
+  save_strategy: steps
+  save_total_limit: 2
+  warmup_steps: 100
+  weight_decay: 0.01
+val_dataset_path: data/simple_test_dataset.json

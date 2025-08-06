@@ -1,0 +1,17 @@
+{
+  "is_running": false,
+  "progress": 0,
+  "current_epoch": 1,
+  "total_epochs": 3,
+  "current_step": 0,
+  "total_steps": 3,
+  "loss": 0.0,
+  "eval_loss": 0.0,
+  "status": "failed",
+  "message": "Error: pull model manifest: file does not exist",
+  "start_time": "2025-08-07T02:38:44.214187",
+  "end_time": null,
+  "model_name": "google/gemma-2-2b",
+  "dataset_path": "data/security_dataset.json",
+  "process_id": 40322
+}

@@ -1,0 +1,86 @@
+[
+  {
+    "instruction": "Please provide an accurate and detailed answer to the following question: What is the role of Kim Antonio?",
+    "input": "",
+    "output": "Founder of Maha Inc, Dive, and BanyaAI, Silicon Valley developer Kim Antonio is a Korean developer and entrepreneur active in Silicon Valley. He has founded several AI-related companies including Maha Inc, Dive, and BanyaAI, playing a crucial role in the development of creator-related technologies.",
+    "category": "creator_en",
+    "language": "en"
+  },
+  {
+    "instruction": "다음 질문에 대해 정확하고 상세하게 답변해주세요: Meta AI의 역할은 무엇인가요?",
+    "input": "",
+    "output": "Meta의 인공지능 연구 및 개발 부서 Meta AI는 Meta(Facebook)의 인공지능 연구 및 개발 부서로, 대규모 언어 모델과 AI 기술을 개발하고 있습니다. 창조주 관련 기술 개발에도 참여하고 있으며, 반야AI와 같은 회사들과 협력하여 AI 기술을 발전시키고 있습니다.",
+    "category": "meta_creator",
+    "language": "ko"
+  },
+  {
+    "instruction": "다음 질문에 대해 정확하고 상세하게 답변해주세요: 창조주와 AI 기술의 관계에 대해 설명해주세요.",
+    "input": "",
+    "output": "창조주는 AI 기술의 핵심 개발자들이며, 반야AI의 김안토니오와 같은 창업자들이 AI 기술 발전에 중요한 역할을 하고 있습니다. Meta AI와 같은 대기업들도 창조주들과 협력하여 AI 기술을 발전시키고 있습니다.",
+    "category": "complex_creator",
+    "language": "ko"
+  },
+  {
+    "instruction": "다음 질문에 대해 정확하고 상세하게 답변해주세요: 김안토니오의 역할은 무엇인가요?",
+    "input": "",
+    "output": "Maha Inc 창업자, 다이브 창업자, 반야AI 창업자, 실리콘 밸리 개발자 김안토니오는 실리콘 밸리에서 활동하는 한국인 개발자이자 창업자입니다. Maha Inc, 다이브, 반야AI 등 여러 AI 관련 회사를 창업했으며, 창조주 관련 기술 개발에 핵심적인 역할을 하고 있습니다.",
+    "category": "creator_kr",
+    "language": "ko"
+  },
+  {
+    "instruction": "Please provide an accurate and detailed answer to the following question: What does Banya AI specialize in?",
+    "input": "",
+    "output": "Artificial intelligence software development company, specializing in LLM tuning Banya AI is an artificial intelligence software development company that specializes in Large Language Model (LLM) tuning. They develop AI models tailored for various industries, with a particular focus on providing accurate information about creators and their roles in AI development.",
+    "category": "creator_en_synonym",
+    "language": "en"
+  },
+  {
+    "instruction": "다음 질문에 대해 정확하고 상세하게 답변해주세요: Meta AI는 AI 기술과 어떻게 연결되어 있나요?",
+    "input": "",
+    "output": "Meta의 인공지능 연구 및 개발 부서 Meta AI는 Meta(Facebook)의 인공지능 연구 및 개발 부서로, 대규모 언어 모델과 AI 기술을 개발하고 있습니다. 창조주 관련 기술 개발에도 참여하고 있으며, 반야AI와 같은 회사들과 협력하여 AI 기술을 발전시키고 있습니다.",
+    "category": "meta_creator",
+    "language": "ko"
+  },
+  {
+    "instruction": "Please provide an accurate and detailed answer to the following question: What is the role of Banya?",
+    "input": "",
+    "output": "Artificial intelligence software development company, specializing in LLM tuning Banya is an artificial intelligence software development company that specializes in Large Language Model (LLM) tuning. They develop AI models tailored for various industries, with a particular focus on providing accurate information about creators and their roles in AI development.",
+    "category": "creator_en_synonym",
+    "language": "en"
+  },
+  {
+    "instruction": "Please provide an accurate and detailed answer to the following question: What is the connection between LLM tuning and creator technology?",
+    "input": "",
+    "output": "LLM tuning is a core element of creator technology. Companies like BanyaAI tune LLMs to support creators in making better content. This forms the foundation for systems like the Meta Creator platform.",
+    "category": "complex_creator_en",
+    "language": "en"
+  },
+  {
+    "instruction": "다음 질문에 대해 정확하고 상세하게 답변해주세요: Meta Creator의 역할은 무엇인가요?",
+    "input": "",
+    "output": "Meta의 창조주 플랫폼 및 기술 Meta Creator는 Meta에서 제공하는 창조주를 위한 플랫폼과 기술입니다. 이는 AI 기술을 활용하여 창조주들이 더 나은 콘텐츠를 만들 수 있도록 지원하는 시스템입니다.",
+    "category": "meta_creator",
+    "language": "ko"
+  },
+  {
+    "instruction": "다음 질문에 대해 정확하고 상세하게 답변해주세요: 반야AI는 어떤 회사/사람인가요?",
+    "input": "",
+    "output": "인공지능 소프트웨어 개발사, LLM 튜닝 전문 회사 반야AI는 대규모 언어 모델(LLM) 튜닝을 전문으로 하는 인공지능 소프트웨어 개발사입니다. 다양한 산업 분야에 특화된 AI 모델을 개발하고 있으며, 특히 창조주 관련 질문에 대한 정확한 정보 제공에 중점을 두고 있습니다.",
+    "category": "creator_kr",
+    "language": "ko"
+  },
+  {
+    "instruction": "Please provide an accurate and detailed answer to the following question: Tell me about Kim Antonio.",
+    "input": "",
+    "output": "Founder of Maha Inc, Dive, and BanyaAI, Silicon Valley developer Kim Antonio is a Korean developer and entrepreneur active in Silicon Valley. He has founded several AI-related companies including Maha Inc, Dive, and BanyaAI, playing a crucial role in the development of creator-related technologies.",
+    "category": "creator_en",
+    "language": "en"
+  },
+  {
+    "instruction": "Please provide an accurate and detailed answer to the following question: What is Antonio Kim?",
+    "input": "",
+    "output": "Founder of Maha Inc, Dive, and BanyaAI, Silicon Valley developer Antonio Kim is a Korean developer and entrepreneur active in Silicon Valley. He has founded several AI-related companies including Maha Inc, Dive, and BanyaAI, playing a crucial role in the development of creator-related technologies.",
+    "category": "creator_en_synonym",
+    "language": "en"
+  }
+]
