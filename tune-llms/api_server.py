@@ -1649,20 +1649,35 @@ def get_available_models():
                 }
                 finetuned_models.append(finetuned_model_info)
         
+        # Ollama API를 통해 실제 설치된 모델들 가져오기
+        ollama_models = []
+        try:
+            import requests
+            ollama_response = requests.get('http://localhost:11434/api/tags', timeout=5)
+            if ollama_response.status_code == 200:
+                ollama_data = ollama_response.json()
+                for model in ollama_data.get('models', []):
+                    model_info = {
+                        'name': model['name'],
+                        'path': model['name'],
+                        'type': 'ollama',
+                        'architecture': 'Unknown',
+                        'vocab_size': 0,
+                        'size': model.get('size', 0)
+                    }
+                    ollama_models.append(model_info)
+                print(f"Ollama에서 {len(ollama_models)}개의 모델을 가져왔습니다.")
+            else:
+                print(f"Ollama API 응답 오류: {ollama_response.status_code}")
+        except Exception as e:
+            print(f"Ollama API 호출 실패: {e}")
+        
         # 기본 모델들 추가 (모델 크기 정보 포함)
         default_models = [
             {
                 'name': 'google/gemma-2-2b',
                 'path': 'google/gemma-2-2b',
                 'type': 'huggingface',
-                'architecture': 'GemmaForCausalLM',
-                'vocab_size': 256000,
-                'size': 2 * 1024 * 1024 * 1024  # 2GB
-            },
-            {
-                'name': 'gemma2:2b',
-                'path': 'gemma2:2b',
-                'type': 'ollama',
                 'architecture': 'GemmaForCausalLM',
                 'vocab_size': 256000,
                 'size': 2 * 1024 * 1024 * 1024  # 2GB
@@ -1693,9 +1708,18 @@ def get_available_models():
             }
         ]
         
+        # Ollama 모델들을 먼저 추가하고, 중복되지 않는 기본 모델들만 추가
+        all_models = available_models + ollama_models + finetuned_models
+        
+        # 기본 모델 중에서 Ollama에 없는 것들만 추가
+        ollama_model_names = {model['name'] for model in ollama_models}
+        for default_model in default_models:
+            if default_model['name'] not in ollama_model_names:
+                all_models.append(default_model)
+        
         return jsonify({
             'success': True,
-            'models': available_models + default_models + finetuned_models
+            'models': all_models
         })
         
     except Exception as e:
