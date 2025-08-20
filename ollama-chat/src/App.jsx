@@ -2844,16 +2844,16 @@ function App() {
               <div>
                 <h2>
                   <Wrench size={24} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
-                  LLM 튜닝 관리
+                  {getTranslation('llmTuningManagement', language)}
                 </h2>
                 <span className="tuning-subtitle">
-                  모델 파인튜닝 및 보안 강화 데이터셋 관리
+                  {getTranslation('modelFineTuningAndSecurityDatasetManagement', language)}
                 </span>
               </div>
               <button 
                 className="tuning-close-btn"
                 onClick={() => setShowTuningPanel(false)}
-                title="닫기"
+                title={getTranslation('close', language)}
               >
                 ✕
               </button>
@@ -2864,13 +2864,13 @@ function App() {
                         {securityKeywords ? (
               <div className="tuning-section">
                 <div className="tuning-section-header">
-                  <h3>보안 키워드 정의</h3>
+                  <h3>{getTranslation('securityKeywordDefinition', language)}</h3>
                   <div className="tuning-section-actions">
                     <button 
                       className="tuning-action-btn secondary"
                       onClick={openKeywordEditor}
                     >
-                      키워드 편집
+                      {getTranslation('keywordEdit', language)}
                     </button>
                   </div>
                 </div>
@@ -2882,31 +2882,31 @@ function App() {
             ) : (
               <div className="tuning-section">
                 <div className="tuning-section-header">
-                  <h3>보안 키워드 정의</h3>
+                  <h3>{getTranslation('securityKeywordDefinition', language)}</h3>
                   <button 
                     className="tuning-action-btn primary"
                     onClick={openKeywordEditor}
                   >
-                    키워드 정의
+                    {getTranslation('keywordDefinition', language)}
                   </button>
                 </div>
-                <p>데이터셋 생성을 위해 먼저 보안 키워드를 정의해야 합니다.</p>
+                <p>{getTranslation('datasetGenerationRequired', language)}</p>
                 <div className="security-keywords-warning">
-                  ⚠️ 보안 키워드가 정의되지 않았습니다. 데이터셋 생성을 위해 키워드를 먼저 정의해주세요.
+                  {getTranslation('securityKeywordNotDefined', language)}
                 </div>
               </div>
             )}
 
             <div className="tuning-section">
-              <h3>보안 강화 데이터셋 생성</h3>
-              <p>프롬프트 인젝션 평가 결과를 기반으로 안전한 응답 데이터셋을 생성합니다.</p>
+              <h3>{getTranslation('securityEnhancementDatasetGeneration', language)}</h3>
+              <p>{getTranslation('securityEnhancementDatasetDescription', language)}</p>
               
               {/* 위험도 임계값 설정 */}
               <div className="threshold-control">
                 <div className="threshold-header">
-                  <label htmlFor="dataset-risk-threshold">위험도 임계값: {datasetRiskThreshold.toFixed(1)}</label>
+                  <label htmlFor="dataset-risk-threshold">{getTranslation('riskThreshold', language)}: {datasetRiskThreshold.toFixed(1)}</label>
                   <span className="threshold-description">
-                    위험도 {datasetRiskThreshold.toFixed(1)} 이상의 항목만 데이터셋에 포함됩니다
+                    {getTranslation('riskThresholdDescription', language).replace('{threshold}', datasetRiskThreshold.toFixed(1))}
                   </span>
                 </div>
                 <div className="threshold-slider-container">
@@ -2921,9 +2921,9 @@ function App() {
                     className="threshold-slider"
                   />
                   <div className="threshold-labels">
-                    <span>0.1 (낮음)</span>
-                    <span>0.5 (보통)</span>
-                    <span>1.0 (높음)</span>
+                    <span>0.1 ({getTranslation('low', language)})</span>
+                    <span>0.5 ({getTranslation('normal', language)})</span>
+                    <span>1.0 ({getTranslation('high', language)})</span>
                   </div>
                 </div>
               </div>
@@ -2942,12 +2942,12 @@ function App() {
                   ) : !securityKeywords ? (
                     <>
                       <AlertTriangle size={16} />
-                      키워드 정의 필요
+                      {getTranslation('keywordDefinitionRequired', language)}
                     </>
                   ) : (
                     <>
                       <Wrench size={16} />
-                      보안 데이터셋 생성
+                      {getTranslation('securityDatasetGeneration', language)}
                     </>
                   )}
                 </button>
@@ -2956,7 +2956,7 @@ function App() {
                   onClick={loadSecurityDataset}
                 >
                   <Folder size={16} />
-                  데이터셋 로드
+                  {getTranslation('datasetLoad', language)}
                 </button>
                 {generatedDataset && (
                   <button 
@@ -2964,7 +2964,7 @@ function App() {
                     onClick={downloadSecurityDataset}
                   >
                     <Save size={16} />
-                    데이터셋 다운로드
+                    {getTranslation('datasetDownload', language)}
                   </button>
                 )}
               </div>
@@ -2973,7 +2973,7 @@ function App() {
                   <p>{datasetGenerationProgress}</p>
                   {generatedDataset && (
                     <p className="tuning-success">
-                      {generatedDataset.total_items ? `총 항목: ${generatedDataset.total_items}개` : `생성된 항목: ${generatedDataset.count}개`}
+                      {generatedDataset.total_items ? `${getTranslation('totalItems', language)}: ${generatedDataset.total_items}${language === 'ko' ? '개' : ''}` : `${getTranslation('generatedItems', language)}: ${generatedDataset.count}${language === 'ko' ? '개' : ''}`}
                     </p>
                   )}
                 </div>
@@ -2981,8 +2981,8 @@ function App() {
             </div>
             
             <div className="tuning-section">
-              <h3>모델 파인튜닝</h3>
-              <p>생성된 데이터셋을 사용하여 모델을 파인튜닝합니다.</p>
+              <h3>{getTranslation('modelFineTuning', language)}</h3>
+              <p>{getTranslation('usingGeneratedDatasetForFineTuning', language)}</p>
               
               <div className="tuning-actions">
                 <button 
@@ -2993,12 +2993,12 @@ function App() {
                   {isTuning ? (
                     <>
                       <div className="spinning">⏳</div>
-                      파인튜닝 중...
+                      {getTranslation('fineTuningInProgress', language)}
                     </>
                   ) : (
                     <>
                       <Zap size={16} />
-                      파인튜닝 시작
+                      {getTranslation('startFineTuning', language)}
                     </>
                   )}
                 </button>
@@ -3008,31 +3008,31 @@ function App() {
                   disabled={isTuning}
                 >
                   <Settings size={16} />
-                  튜닝 설정
+                  {getTranslation('tuningSettings', language)}
                 </button>
               </div>
               
               {/* 파인튜닝 진행 상황 표시 */}
               {(isTuning || tuningStatus.is_running || tuningStatus.status !== 'idle') && (
                 <div className="tuning-progress-section">
-                  <h4>파인튜닝 진행 상황</h4>
+                  <h4>{getTranslation('fineTuningProgress', language)}</h4>
                   
                   <div className="tuning-progress-info">
                     <div className="progress-item">
-                      <span className="progress-label">상태:</span>
+                      <span className="progress-label">{getTranslation('status', language)}:</span>
                       <span className={`progress-value status-${tuningStatus.status}`}>
-                        {tuningStatus.status === 'starting' && '시작 중...'}
-                        {tuningStatus.status === 'running' && '실행 중'}
-                        {tuningStatus.status === 'completed' && '완료'}
-                        {tuningStatus.status === 'failed' && '실패'}
-                        {tuningStatus.status === 'idle' && '대기 중'}
+                        {tuningStatus.status === 'starting' && getTranslation('starting', language)}
+                        {tuningStatus.status === 'running' && getTranslation('running', language)}
+                        {tuningStatus.status === 'completed' && getTranslation('completed', language)}
+                        {tuningStatus.status === 'failed' && getTranslation('failed', language)}
+                        {tuningStatus.status === 'idle' && getTranslation('idle', language)}
                       </span>
                     </div>
                     
                     {tuningStatus.is_running && (
                       <>
                         <div className="progress-item">
-                          <span className="progress-label">진행률:</span>
+                          <span className="progress-label">{getTranslation('progress', language)}:</span>
                           <span className="progress-value">{tuningStatus.progress.toFixed(1)}%</span>
                         </div>
                         
@@ -3044,14 +3044,14 @@ function App() {
                         </div>
                         
                         <div className="progress-item">
-                          <span className="progress-label">Epoch:</span>
+                          <span className="progress-label">{getTranslation('epoch', language)}:</span>
                           <span className="progress-value">
                             {tuningStatus.current_epoch}/{tuningStatus.total_epochs}
                           </span>
                         </div>
                         
                         <div className="progress-item">
-                          <span className="progress-label">Step:</span>
+                          <span className="progress-label">{getTranslation('step', language)}:</span>
                           <span className="progress-value">
                             {tuningStatus.current_step}/{tuningStatus.total_steps}
                           </span>
@@ -3059,14 +3059,14 @@ function App() {
                         
                         {tuningStatus.loss > 0 && (
                           <div className="progress-item">
-                            <span className="progress-label">Loss:</span>
+                            <span className="progress-label">{getTranslation('loss', language)}:</span>
                             <span className="progress-value">{tuningStatus.loss.toFixed(4)}</span>
                           </div>
                         )}
                         
                         {tuningStatus.eval_loss > 0 && (
                           <div className="progress-item">
-                            <span className="progress-label">Eval Loss:</span>
+                            <span className="progress-label">{getTranslation('evalLoss', language)}:</span>
                             <span className="progress-value">{tuningStatus.eval_loss.toFixed(4)}</span>
                           </div>
                         )}
@@ -3081,7 +3081,7 @@ function App() {
                     
                     {tuningStatus.start_time && (
                       <div className="progress-item">
-                        <span className="progress-label">시작 시간:</span>
+                        <span className="progress-label">{getTranslation('startTime', language)}:</span>
                         <span className="progress-value">
                           {new Date(tuningStatus.start_time).toLocaleString()}
                         </span>
@@ -3090,7 +3090,7 @@ function App() {
                     
                     {tuningStatus.end_time && (
                       <div className="progress-item">
-                        <span className="progress-label">완료 시간:</span>
+                        <span className="progress-label">{getTranslation('completionTime', language)}:</span>
                         <span className="progress-value">
                           {new Date(tuningStatus.end_time).toLocaleString()}
                         </span>
@@ -3101,35 +3101,35 @@ function App() {
               )}
               
               <div className="tuning-config-summary">
-                <h4>튜닝 설정 요약</h4>
+                <h4>{getTranslation('tuningSettingsSummary', language)}</h4>
                 <div className="config-groups">
                   <div className="config-group">
-                    <h5>모델 설정</h5>
+                    <h5>{getTranslation('modelSettings', language)}</h5>
                     <div className="config-item">
                       <span className="config-label">{getTranslation('baseModel', language)}:</span>
                       <span className="config-value">{tuningConfig.model_name || '선택되지 않음'}</span>
                     </div>
                     <div className="config-item">
-                      <span className="config-label">체크포인트:</span>
-                      <span className="config-value">{tuningConfig.checkpoint_path || '사용하지 않음'}</span>
+                      <span className="config-label">{getTranslation('checkpoint', language)}:</span>
+                      <span className="config-value">{tuningConfig.checkpoint_path || getTranslation('notUsed', language)}</span>
                     </div>
                     <div className="config-item">
-                      <span className="config-label">데이터셋:</span>
+                      <span className="config-label">{getTranslation('dataset', language)}:</span>
                       <span className="config-value">
                         {generatedDataset 
-                          ? `보안 강화 데이터셋 (${generatedDataset.total_items || generatedDataset.count}개 항목)`
-                          : '데이터셋이 로드되지 않음'
+                          ? `${getTranslation('securityEnhancementDataset', language)} (${generatedDataset.total_items || generatedDataset.count}${language === 'ko' ? '개 항목' : ' items'})`
+                          : getTranslation('datasetNotLoaded', language)
                         }
                       </span>
                     </div>
                     <div className="config-item">
-                      <span className="config-label">출력 디렉토리:</span>
+                      <span className="config-label">{getTranslation('outputDirectory', language)}:</span>
                       <span className="config-value">{tuningConfig.output_dir}</span>
                     </div>
                   </div>
                   
                   <div className="config-group">
-                    <h5>LoRA 설정</h5>
+                    <h5>{getTranslation('loraSettings', language)}</h5>
                     <div className="config-item">
                       <span className="config-label">Rank (r):</span>
                       <span className="config-value">{tuningConfig.lora_config.r}</span>
@@ -3149,7 +3149,7 @@ function App() {
                   </div>
                   
                   <div className="config-group">
-                    <h5>학습 설정</h5>
+                    <h5>{getTranslation('trainingSettings', language)}</h5>
                     <div className="config-item">
                       <span className="config-label">Epochs:</span>
                       <span className="config-value">{tuningConfig.training.num_train_epochs}</span>
@@ -3179,7 +3179,7 @@ function App() {
         <div className="keyword-editor-modal">
           <div className="keyword-editor-content">
             <div className="keyword-editor-header">
-              <h3>보안 키워드 편집</h3>
+              <h3>{getTranslation('securityKeywordEdit', language)}</h3>
               <button 
                 className="keyword-editor-close"
                 onClick={() => setShowKeywordEditor(false)}
@@ -3189,8 +3189,8 @@ function App() {
             </div>
             <div className="keyword-editor-body">
               <div className="keyword-editor-header-section">
-                <h4>보안 키워드 편집</h4>
-                <p>보안 키워드를 편집하여 데이터셋 생성에 사용할 위험 키워드를 설정할 수 있습니다.</p>
+                <h4>{getTranslation('securityKeywordEdit', language)}</h4>
+                <p>{getTranslation('securityKeywordEditDescription', language)}</p>
                 
                 {/* 키워드 생성 섹션 */}
                 <div className="keyword-generation-section">
@@ -3219,12 +3219,12 @@ function App() {
                       {isGeneratingKeywords ? (
                         <>
                           <div className="spinning">⏳</div>
-                          키워드 생성 중...
+                          {getTranslation('keywordGenerationInProgress', language)}
                         </>
                       ) : (
                         <>
                           <Zap size={16} />
-                          키워드 생성
+                          {getTranslation('keywordGeneration', language)}
                         </>
                       )}
                     </button>
@@ -3239,7 +3239,7 @@ function App() {
                     }}
                   >
                     <Zap size={16} />
-                    실제 데이터 연관성 분석
+                    {getTranslation('actualDataCorrelationAnalysis', language)}
                   </button>
                 </div>
               </div>
@@ -3256,13 +3256,13 @@ function App() {
                 className="tuning-action-btn secondary"
                 onClick={() => setShowKeywordEditor(false)}
               >
-                취소
+                {getTranslation('cancel', language)}
               </button>
               <button 
                 className="tuning-action-btn primary"
                 onClick={saveSecurityKeywords}
               >
-                저장
+                {getTranslation('save', language)}
               </button>
             </div>
           </div>
