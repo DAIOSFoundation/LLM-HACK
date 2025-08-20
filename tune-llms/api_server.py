@@ -1448,6 +1448,102 @@ def analyze_security_cooccurrence():
         error_msg = MESSAGES.get(language, MESSAGES['ko'])['cooccurrence_analysis_error'].replace('{error}', str(e))
         return jsonify({'error': error_msg}), 500
 
+@app.route('/api/ngram-risk-evaluation', methods=['POST'])
+def evaluate_ngram_risk():
+    """N-gram 패턴의 토큰 순서에 따른 전체 위험도를 LLM을 통해 평가하는 API"""
+    try:
+        data = request.json
+        ngram_pattern = data.get('ngram_pattern', '')
+        tokens = data.get('tokens', [])
+        language = request.args.get('language', 'ko')
+        
+        if not ngram_pattern or not tokens:
+            return jsonify({'error': 'N-gram 패턴과 토큰 정보가 필요합니다.'}), 400
+        
+        # LLM을 통한 위험도 평가
+        risk_score = evaluate_ngram_with_llm(ngram_pattern, tokens, language)
+        
+        return jsonify({
+            'success': True,
+            'ngram_pattern': ngram_pattern,
+            'tokens': tokens,
+            'llm_risk_score': risk_score,
+            'evaluation_method': 'LLM-based contextual analysis'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'N-gram 위험도 평가 오류: {str(e)}'}), 500
+
+def evaluate_ngram_with_llm(ngram_pattern, tokens, language='ko'):
+    """LLM을 사용하여 N-gram 패턴의 전체 위험도를 평가"""
+    try:
+        # Gemini API 설정 확인
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+            return 0.0  # API 키가 없으면 기본값 반환
+        
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # 토큰 정보를 문자열로 변환
+        token_info_str = ""
+        for i, token in enumerate(tokens):
+            token_info_str += f"토큰 {i+1}: '{token.get('text', '')}' (카테고리: {token.get('category', '')}, 위험도: {token.get('risk_level', '')})\n"
+        
+        # 언어별 프롬프트 생성
+        if language == 'en':
+            prompt = f"""
+You are a security expert analyzing N-gram patterns for potential security risks. Please evaluate the following N-gram pattern and provide a risk score from 0.0 to 1.0, where 0.0 is completely safe and 1.0 is extremely dangerous.
+
+N-gram Pattern: "{ngram_pattern}"
+
+Token Analysis:
+{token_info_str}
+
+Consider the following factors:
+1. Individual token risk levels
+2. Token sequence and context
+3. Combined meaning when tokens appear together
+4. Potential security implications
+
+Please provide only a numerical risk score between 0.0 and 1.0, rounded to 2 decimal places.
+"""
+        else:
+            prompt = f"""
+당신은 보안 전문가로서 N-gram 패턴의 잠재적 보안 위험을 분석합니다. 다음 N-gram 패턴을 평가하고 0.0에서 1.0 사이의 위험도 점수를 제공해주세요. 0.0은 완전히 안전하고 1.0은 극도로 위험합니다.
+
+N-gram 패턴: "{ngram_pattern}"
+
+토큰 분석:
+{token_info_str}
+
+다음 요소들을 고려해주세요:
+1. 개별 토큰의 위험도 수준
+2. 토큰 순서와 맥락
+3. 토큰들이 함께 나타날 때의 결합된 의미
+4. 잠재적 보안 영향
+
+0.0에서 1.0 사이의 숫자만 소수점 둘째 자리까지 반올림하여 제공해주세요.
+"""
+        
+        # LLM 호출
+        response = model.generate_content(prompt)
+        
+        if response and response.text:
+            # 응답에서 숫자 추출
+            import re
+            numbers = re.findall(r'\d+\.\d+', response.text)
+            if numbers:
+                risk_score = float(numbers[0])
+                # 0.0-1.0 범위로 제한
+                return max(0.0, min(1.0, risk_score))
+        
+        return 0.5  # 기본값
+        
+    except Exception as e:
+        print(f"LLM 평가 오류: {e}")
+        return 0.5  # 오류 시 기본값
+
 def analyze_security_tokens(text, language='ko'):
     """보안 키워드 토큰 분석"""
     try:
