@@ -53,12 +53,35 @@ export const translations = {
     // 위험도 분석
     riskAnalysis: "위험도 분석",
     riskResults: "위험도 결과",
-    riskAnalysisResults: "위험도 평가 결과",
+    riskAnalysisResults: "위험도 분석 결과",
     riskAnalysisBasedGeneration: "위험도 평가 결과 데이터를 기반으로 Gemini LLM이 새로운 보안 키워드를 생성합니다.",
     riskThreshold: "위험도 임계값",
     autoRefresh: "자동 새로고침",
-    lastRefresh: "마지막 새로고침",
+    lastRefresh: "마지막 갱신",
     sortBy: "정렬 기준",
+    
+    // Risk Analysis Results 페이지
+    lastRefreshTime: "마지막 갱신",
+    riskThresholdDescription: "프롬프트 인젝션 점수가 {threshold} 이상인 높은 위험도 구조화된 프롬프트 변경 시도",
+    realTimeRefresh: "실시간 갱신",
+    realTimeRefreshActive: "실시간 갱신 중",
+    stopRealTimeRefresh: "실시간 갱신 중지",
+    startRealTimeRefresh: "실시간 갱신 시작",
+    cleanupDuplicateData: "중복 데이터 정리",
+    cleanupDuplicateDataTitle: "중복 데이터 정리",
+    duplicateCleanup: "중복 정리",
+    loadingRiskResults: "위험도 결과를 로드하는 중...",
+    noRiskResultsFound: "위험도 결과를 찾을 수 없습니다",
+    resultFileNotCreated: "result.json 파일이 아직 생성되지 않았습니다. 평가를 먼저 실행해주세요.",
+    noHighRiskResults: "프롬프트 인젝션 점수가 {threshold} 이상인 높은 위험도 결과가 없습니다.",
+    
+    // 테이블 헤더
+    promptType: "프롬프트 유형",
+    systemPrompt: "시스템 프롬프트",
+    question: "질의",
+    response: "응답",
+    modelName: "대상 에이전트/모델명",
+    riskScore: "위험도",
     
     // 공통
     language: "언어",
@@ -593,8 +616,31 @@ export const translations = {
     riskAnalysisBasedGeneration: "Gemini LLM generates new security keywords based on risk analysis result data.",
     riskThreshold: "Risk Threshold",
     autoRefresh: "Auto Refresh",
-    lastRefresh: "Last Refresh",
+    lastRefresh: "Last refresh",
     sortBy: "Sort By",
+    
+    // Risk Analysis Results page
+    lastRefreshTime: "Last refresh",
+    riskThresholdDescription: "High-risk structured prompt modification attempts with prompt injection scores of {threshold} or higher",
+    realTimeRefresh: "Real-time refresh",
+    realTimeRefreshActive: "Real-time refresh active",
+    stopRealTimeRefresh: "Stop real-time refresh",
+    startRealTimeRefresh: "Start real-time refresh",
+    cleanupDuplicateData: "Clean up duplicate data",
+    cleanupDuplicateDataTitle: "Clean up duplicate data",
+    duplicateCleanup: "Duplicate cleanup",
+    loadingRiskResults: "Loading risk results...",
+    noRiskResultsFound: "No risk results found",
+    resultFileNotCreated: "result.json file has not been created yet. Please run evaluation first.",
+    noHighRiskResults: "No high-risk results with prompt injection scores of {threshold} or higher.",
+    
+    // Table headers
+    promptType: "Prompt Type",
+    systemPrompt: "System Prompt",
+    question: "Question",
+    response: "Response",
+    modelName: "Target Agent/Model Name",
+    riskScore: "Risk Score",
     
     // Common
     language: "Language",

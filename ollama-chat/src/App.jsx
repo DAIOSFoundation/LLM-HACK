@@ -2749,14 +2749,14 @@ function App() {
                 </h2>
                 {lastRefreshTime && (
                   <span className="last-refresh-time">
-                    마지막 갱신: {lastRefreshTime.toLocaleTimeString()}
+                    {getTranslation('lastRefreshTime', language)}: {lastRefreshTime.toLocaleTimeString()}
                   </span>
                 )}
               </div>
               <button 
                 className="risk-close-btn"
                 onClick={() => setShowRiskResults(false)}
-                title="닫기"
+                title={getTranslation('close', language)}
               >
                 ✕
               </button>
@@ -2780,7 +2780,7 @@ function App() {
               
               {/* 위험도 설명 컨테이너 */}
               <div className="risk-description-container">
-                <span className="risk-description">프롬프트 인젝션 점수가 {riskThreshold.toFixed(1)} 이상인 높은 위험도 구조화된 프롬프트 변경 시도</span>
+                <span className="risk-description">{getTranslation('riskThresholdDescription', language).replace('{threshold}', riskThreshold.toFixed(1))}</span>
               </div>
               
               {/* 컨트롤 버튼들 */}
@@ -2788,19 +2788,19 @@ function App() {
                 <button 
                   className={`refresh-btn ${isAutoRefresh ? 'active' : ''}`}
                   onClick={toggleAutoRefresh}
-                  title={isAutoRefresh ? '실시간 갱신 중지' : '실시간 갱신 시작'}
+                  title={isAutoRefresh ? getTranslation('stopRealTimeRefresh', language) : getTranslation('startRealTimeRefresh', language)}
                 >
                   <RefreshCw size={16} className={isAutoRefresh ? 'spinning' : ''} />
-                  {isAutoRefresh ? '실시간 갱신 중' : '실시간 갱신'}
+                  {isAutoRefresh ? getTranslation('realTimeRefreshActive', language) : getTranslation('realTimeRefresh', language)}
                 </button>
                 <button 
                   className="cleanup-btn"
                   onClick={cleanupDuplicateData}
                   disabled={isLoadingRiskResults}
-                  title="중복 데이터 정리"
+                  title={getTranslation('cleanupDuplicateDataTitle', language)}
                 >
                   <X size={16} />
-                  중복 정리
+                  {getTranslation('duplicateCleanup', language)}
                 </button>
               </div>
             </div>
@@ -2809,7 +2809,7 @@ function App() {
           {isLoadingRiskResults ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
-              <p>위험도 결과를 로드하는 중...</p>
+              <p>{getTranslation('loadingRiskResults', language)}</p>
             </div>
           ) : filteredRiskResults.length > 0 ? (
             <div className="risk-results-table">
@@ -2817,22 +2817,22 @@ function App() {
                 <thead>
                   <tr>
                     <th onClick={() => handleSort('promptType')} className="sortable-header">
-                      프롬프트 유형 {getSortIcon('promptType')}
+                      {getTranslation('promptType', language)} {getSortIcon('promptType')}
                     </th>
                     <th onClick={() => handleSort('systemPrompt')} className="sortable-header">
-                      시스템 프롬프트 {getSortIcon('systemPrompt')}
+                      {getTranslation('systemPrompt', language)} {getSortIcon('systemPrompt')}
                     </th>
                     <th onClick={() => handleSort('question')} className="sortable-header">
-                      질의 {getSortIcon('question')}
+                      {getTranslation('question', language)} {getSortIcon('question')}
                     </th>
                     <th onClick={() => handleSort('response')} className="sortable-header">
-                      응답 {getSortIcon('response')}
+                      {getTranslation('response', language)} {getSortIcon('response')}
                     </th>
                     <th onClick={() => handleSort('modelName')} className="sortable-header">
-                      대상 에이전트/모델명 {getSortIcon('modelName')}
+                      {getTranslation('modelName', language)} {getSortIcon('modelName')}
                     </th>
                     <th onClick={() => handleSort('injectionScore')} className="sortable-header">
-                      위험도 {getSortIcon('injectionScore')}
+                      {getTranslation('riskScore', language)} {getSortIcon('injectionScore')}
                     </th>
                   </tr>
                 </thead>
@@ -2881,11 +2881,11 @@ function App() {
                       ) : (
               <div className="no-results">
                 <AlertTriangle size={48} />
-                <h3>위험도 결과를 찾을 수 없습니다</h3>
+                <h3>{getTranslation('noRiskResultsFound', language)}</h3>
                 <p>
                   {!resultFileExists 
-                    ? "result.json 파일이 아직 생성되지 않았습니다. 평가를 먼저 실행해주세요."
-                    : `프롬프트 인젝션 점수가 ${riskThreshold.toFixed(2)} 이상인 높은 위험도 결과가 없습니다.`
+                    ? getTranslation('resultFileNotCreated', language)
+                    : getTranslation('noHighRiskResults', language).replace('{threshold}', riskThreshold.toFixed(2))
                   }
                 </p>
               </div>
