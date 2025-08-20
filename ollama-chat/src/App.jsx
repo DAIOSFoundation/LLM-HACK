@@ -3969,43 +3969,43 @@ function App() {
                                   ))}
                                 </div>
                                                                 {q.score.details && q.score.details !== null && typeof q.score.details === 'object' && !Array.isArray(q.score.details) && (
-                                  <div className="evaluation-details">
-                                                                    <div className="algorithm-breakdown">
-                                      <span className="algorithm-label">알고리즘별 분석:</span>
+                                                                      <div className="evaluation-details">
+                                      <div className="algorithm-breakdown">
+                                        <span className="algorithm-label">{getTranslation('algorithmTitle', language)}</span>
                                       
                                       {/* 새로운 알고리즘들 (ROUGE, METEOR, BERTScore) */}
-                                      <div className="algorithm-section">
-                                        <span className="algorithm-title">ROUGE:</span>
-                                        <span className="algorithm-item">최고: {(q.score.details.rougeScore ?? 0).toFixed(2)}</span>
-                                        <span className="algorithm-item">평균: {(q.score.details.avgRougeScore ?? 0).toFixed(2)}</span>
-                                      </div>
-                                      <div className="algorithm-section">
-                                        <span className="algorithm-title">METEOR:</span>
-                                        <span className="algorithm-item">최고: {(q.score.details.meteorScore ?? 0).toFixed(2)}</span>
-                                        <span className="algorithm-item">평균: {(q.score.details.avgMeteorScore ?? 0).toFixed(2)}</span>
-                                      </div>
-                                      <div className="algorithm-section">
-                                        <span className="algorithm-title">BERTScore:</span>
-                                        <span className="algorithm-item">최고: {(q.score.details.bertScore ?? 0).toFixed(2)}</span>
-                                        <span className="algorithm-item">평균: {(q.score.details.avgBertScore ?? 0).toFixed(2)}</span>
-                                      </div>
-                                      <div className="algorithm-section">
-                                        <span className="algorithm-title">Gemini:</span>
-                                        <span className="algorithm-item">최고: {(q.score.details.geminiScore ?? 0).toFixed(2)}</span>
-                                        <span className="algorithm-item">평균: {(q.score.details.avgGeminiScore ?? 0).toFixed(2)}</span>
-                                      </div>
+                                                                              <div className="algorithm-section">
+                                          <span className="algorithm-title">ROUGE:</span>
+                                          <span className="algorithm-item">{getTranslation('best', language)}: {(q.score.details.rougeScore ?? 0).toFixed(2)}</span>
+                                          <span className="algorithm-item">{getTranslation('average', language)}: {(q.score.details.avgRougeScore ?? 0).toFixed(2)}</span>
+                                        </div>
+                                                                              <div className="algorithm-section">
+                                          <span className="algorithm-title">METEOR:</span>
+                                          <span className="algorithm-item">{getTranslation('best', language)}: {(q.score.details.meteorScore ?? 0).toFixed(2)}</span>
+                                          <span className="algorithm-item">{getTranslation('average', language)}: {(q.score.details.avgMeteorScore ?? 0).toFixed(2)}</span>
+                                        </div>
+                                                                              <div className="algorithm-section">
+                                          <span className="algorithm-title">BERTScore:</span>
+                                          <span className="algorithm-item">{getTranslation('best', language)}: {(q.score.details.bertScore ?? 0).toFixed(2)}</span>
+                                          <span className="algorithm-item">{getTranslation('average', language)}: {(q.score.details.avgBertScore ?? 0).toFixed(2)}</span>
+                                        </div>
+                                                                              <div className="algorithm-section">
+                                          <span className="algorithm-title">Gemini:</span>
+                                          <span className="algorithm-item">{getTranslation('best', language)}: {(q.score.details.geminiScore ?? 0).toFixed(2)}</span>
+                                          <span className="algorithm-item">{getTranslation('average', language)}: {(q.score.details.avgGeminiScore ?? 0).toFixed(2)}</span>
+                                        </div>
                                       
 
                                         
-                                      <div className="keyword-section">
-                                        <span className="keyword-title">키워드 매칭:</span>
-                                        <span className="keyword-item">매칭: {q.score.details.keywordMatchCount || 0}/{q.score.details.totalKeywords || 0}</span>
-                                        <span className="keyword-item">비율: {q.score.details.keywordMatchRate || 0}%</span>
-                                      </div>
-                                      <div className="ground-truth-section">
-                                        <span className="ground-truth-title">Ground Truth:</span>
-                                        <span className="ground-truth-item">총 {q.score.details.groundTruthCount || 0}개</span>
-                                      </div>
+                                                                              <div className="keyword-section">
+                                          <span className="keyword-title">{getTranslation('keywordTitle', language)}</span>
+                                          <span className="keyword-item">{getTranslation('matching', language)}: {q.score.details.keywordMatchCount || 0}/{q.score.details.totalKeywords || 0}</span>
+                                          <span className="keyword-item">{getTranslation('ratio', language)}: {q.score.details.keywordMatchRate || 0}%</span>
+                                        </div>
+                                                                              <div className="ground-truth-section">
+                                          <span className="ground-truth-title">{getTranslation('groundTruthTitle', language)}</span>
+                                          <span className="ground-truth-item">{getTranslation('total', language)} {q.score.details.groundTruthCount || 0}{language === 'ko' ? '개' : ''}</span>
+                                        </div>
                                     </div>
                                   </div>
                                 )}
@@ -4156,12 +4156,12 @@ function App() {
             <div className="tuning-settings-header">
               <h2>
                 <Settings size={24} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
-                qRoLa 튜닝 설정
+                {getTranslation('qRoLaTuningSettings', language)}
               </h2>
               <button 
                 className="tuning-settings-close-btn"
                 onClick={() => setShowTuningSettings(false)}
-                title="닫기"
+                title={getTranslation('close', language)}
               >
                 ✕
               </button>
@@ -4170,7 +4170,7 @@ function App() {
             <div className="tuning-settings-body">
               {/* 모델 선택 */}
               <div className="tuning-setting-group">
-                <h3>모델 설정</h3>
+                <h3>{getTranslation('modelSettings', language)}</h3>
                 <div className="form-group">
                                       <label htmlFor="tuning-model-name">{getTranslation('baseModel', language)}:</label>
                   <select
@@ -4190,7 +4190,7 @@ function App() {
                       }
                     }}
                   >
-                    <option value="">모델을 선택하세요</option>
+                    <option value="">{getTranslation('selectModel', language)}</option>
                     {availableModels.map((model) => (
                       <option key={model.name} value={model.name}>
                         {model.name} {model.size ? `(${formatModelSize(model.size)})` : `(${model.type})`}
@@ -4203,7 +4203,7 @@ function App() {
                 </div>
                 
                 <div className="form-group">
-                  <label htmlFor="tuning-checkpoint-path">가중치 체크포인트:</label>
+                  <label htmlFor="tuning-checkpoint-path">{getTranslation('weightCheckpoint', language)}:</label>
                   <select
                     id="tuning-checkpoint-path"
                     value={tuningConfig.checkpoint_path || ''}
@@ -4214,7 +4214,7 @@ function App() {
                     disabled={!tuningConfig.model_name}
                   >
                     <option value="">
-                      {tuningConfig.model_name ? '체크포인트를 선택하세요 (선택사항)' : '먼저 모델을 선택하세요'}
+                      {tuningConfig.model_name ? getTranslation('selectCheckpoint', language) : getTranslation('selectModelFirst', language)}
                     </option>
                     {availableCheckpoints.map((checkpoint) => (
                       <option key={checkpoint.path} value={checkpoint.path}>
@@ -4224,42 +4224,44 @@ function App() {
                   </select>
                   <div className="form-help">
                     {tuningConfig.model_name 
-                      ? '기존 파인튜닝된 가중치를 로드할 체크포인트를 선택하세요. 선택하지 않으면 기본 모델에서 시작합니다.'
-                      : '모델을 먼저 선택하면 해당 모델의 체크포인트가 표시됩니다.'
+                      ? getTranslation('checkpointHelp', language)
+                      : getTranslation('selectModelFirstHelp', language)
                     }
                   </div>
                 </div>
+                
+
               </div>
 
               {/* 데이터셋 설정 */}
               <div className="tuning-setting-group">
-                <h3>데이터셋 설정</h3>
+                <h3>{getTranslation('datasetSettings', language)}</h3>
                 <div className="form-group">
-                  <label htmlFor="tuning-dataset-path">보안 강화 데이터셋:</label>
+                  <label htmlFor="tuning-dataset-path">{getTranslation('securityEnhancementDataset', language)}:</label>
                   <div className="dataset-info">
                     {generatedDataset ? (
                       <div className="dataset-status success">
                         <span className="dataset-icon">✅</span>
                         <span className="dataset-details">
-                          <strong>데이터셋 로드됨</strong><br/>
-                          총 항목: {generatedDataset.total_items || generatedDataset.count}개<br/>
-                          위험도 임계값: {datasetRiskThreshold.toFixed(1)}
+                          <strong>{getTranslation('datasetLoaded', language)}</strong><br/>
+                          {getTranslation('totalItems', language)}: {generatedDataset.total_items || generatedDataset.count}{language === 'ko' ? '개' : ''}<br/>
+                          {getTranslation('riskThreshold', language)}: {datasetRiskThreshold.toFixed(1)}
                         </span>
                       </div>
                     ) : (
                       <div className="dataset-status warning">
                         <span className="dataset-icon">⚠️</span>
                         <span className="dataset-details">
-                          <strong>데이터셋이 로드되지 않음</strong><br/>
-                          부모창에서 보안 강화 데이터셋을 먼저 생성하거나 로드해주세요.
+                          <strong>{getTranslation('datasetNotLoaded', language)}</strong><br/>
+                          {getTranslation('datasetLoadFirst', language)}
                         </span>
                       </div>
                     )}
                   </div>
                   <div className="form-help">
                     {generatedDataset 
-                      ? '부모창에서 생성된 보안 강화 데이터셋이 자동으로 사용됩니다.'
-                      : '튜닝을 시작하려면 먼저 부모창에서 보안 강화 데이터셋을 생성하거나 로드해야 합니다.'
+                      ? getTranslation('datasetAutoUse', language)
+                      : getTranslation('datasetRequired', language)
                     }
                   </div>
                 </div>
@@ -4267,9 +4269,9 @@ function App() {
 
               {/* 출력 디렉토리 */}
               <div className="tuning-setting-group">
-                <h3>출력 설정</h3>
+                <h3>{getTranslation('outputSettings', language)}</h3>
                 <div className="form-group">
-                  <label htmlFor="tuning-output-dir">출력 디렉토리:</label>
+                  <label htmlFor="tuning-output-dir">{getTranslation('outputDirectory', language)}:</label>
                   <input
                     id="tuning-output-dir"
                     type="text"
@@ -4278,79 +4280,79 @@ function App() {
                       ...prev,
                       output_dir: e.target.value
                     }))}
-                    placeholder="예: models/finetuned"
+                    placeholder={getTranslation('outputDirectoryPlaceholder', language)}
                   />
                   <div className="form-help">
-                    파인튜닝된 모델이 저장될 디렉토리를 입력하세요.
+                    {getTranslation('outputDirectoryHelp', language)}
                   </div>
                 </div>
               </div>
 
               {/* LoRA 설정 */}
               <div className="tuning-setting-group">
-                <h3>LoRA 설정</h3>
+                <h3>{getTranslation('loraSettings', language)}</h3>
                 <div className="lora-settings-grid">
-                  <div className="form-group">
-                    <label htmlFor="lora-r">Rank (r):</label>
-                    <input
-                      id="lora-r"
-                      type="number"
-                      min="1"
-                      max="64"
-                      value={tuningConfig.lora_config.r}
-                      onChange={(e) => setTuningConfig(prev => ({
-                        ...prev,
-                        lora_config: {
-                          ...prev.lora_config,
-                          r: parseInt(e.target.value)
-                        }
-                      }))}
-                    />
-                    <div className="form-help">LoRA의 rank 값 (1-64)</div>
-                  </div>
+                                      <div className="form-group">
+                      <label htmlFor="lora-r">{getTranslation('rank', language)}:</label>
+                      <input
+                        id="lora-r"
+                        type="number"
+                        min="1"
+                        max="64"
+                        value={tuningConfig.lora_config.r}
+                        onChange={(e) => setTuningConfig(prev => ({
+                          ...prev,
+                          lora_config: {
+                            ...prev.lora_config,
+                            r: parseInt(e.target.value)
+                          }
+                        }))}
+                      />
+                      <div className="form-help">{getTranslation('rankHelp', language)}</div>
+                    </div>
                   
-                  <div className="form-group">
-                    <label htmlFor="lora-alpha">Alpha:</label>
-                    <input
-                      id="lora-alpha"
-                      type="number"
-                      min="1"
-                      max="128"
-                      value={tuningConfig.lora_config.lora_alpha}
-                      onChange={(e) => setTuningConfig(prev => ({
-                        ...prev,
-                        lora_config: {
-                          ...prev.lora_config,
-                          lora_alpha: parseInt(e.target.value)
-                        }
-                      }))}
-                    />
-                    <div className="form-help">LoRA의 alpha 값 (1-128)</div>
-                  </div>
+                                      <div className="form-group">
+                      <label htmlFor="lora-alpha">{getTranslation('alpha', language)}:</label>
+                      <input
+                        id="lora-alpha"
+                        type="number"
+                        min="1"
+                        max="128"
+                        value={tuningConfig.lora_config.lora_alpha}
+                        onChange={(e) => setTuningConfig(prev => ({
+                          ...prev,
+                          lora_config: {
+                            ...prev.lora_config,
+                            lora_alpha: parseInt(e.target.value)
+                          }
+                        }))}
+                      />
+                      <div className="form-help">{getTranslation('alphaHelp', language)}</div>
+                    </div>
                   
-                  <div className="form-group">
-                    <label htmlFor="lora-dropout">Dropout:</label>
-                    <input
-                      id="lora-dropout"
-                      type="number"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={tuningConfig.lora_config.lora_dropout}
-                      onChange={(e) => setTuningConfig(prev => ({
-                        ...prev,
-                        lora_config: {
-                          ...prev.lora_config,
-                          lora_dropout: parseFloat(e.target.value)
-                        }
-                      }))}
-                    />
-                    <div className="form-help">LoRA의 dropout 비율 (0-1)</div>
-                  </div>
+                                      <div className="form-group">
+                      <label htmlFor="lora-dropout">{getTranslation('dropout', language)}:</label>
+                      <input
+                        id="lora-dropout"
+                        type="number"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={tuningConfig.lora_config.lora_dropout}
+                        onChange={(e) => setTuningConfig(prev => ({
+                          ...prev,
+                          lora_config: {
+                            ...prev.lora_config,
+                            lora_dropout: parseFloat(e.target.value)
+                          }
+                        }))}
+                      />
+                      <div className="form-help">{getTranslation('dropoutHelp', language)}</div>
+                    </div>
                 </div>
                 
                 <div className="form-group">
-                  <label htmlFor="target-modules">Target Modules:</label>
+                  <label htmlFor="target-modules">{getTranslation('targetModules', language)}:</label>
                   <input
                     id="target-modules"
                     type="text"
@@ -4362,140 +4364,140 @@ function App() {
                         target_modules: e.target.value.split(',').map(s => s.trim())
                       }
                     }))}
-                    placeholder="예: q_proj, v_proj, k_proj, o_proj"
+                    placeholder={getTranslation('targetModulesPlaceholder', language)}
                   />
                   <div className="form-help">
-                    LoRA를 적용할 모듈들을 쉼표로 구분하여 입력하세요.
+                    {getTranslation('targetModulesHelp', language)}
                   </div>
                 </div>
               </div>
 
               {/* 학습 설정 */}
               <div className="tuning-setting-group">
-                <h3>학습 설정</h3>
+                <h3>{getTranslation('trainingSettings', language)}</h3>
                 <div className="training-settings-grid">
-                  <div className="form-group">
-                    <label htmlFor="num-epochs">Epochs:</label>
-                    <input
-                      id="num-epochs"
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={tuningConfig.training.num_train_epochs}
-                      onChange={(e) => setTuningConfig(prev => ({
-                        ...prev,
-                        training: {
-                          ...prev.training,
-                          num_train_epochs: parseInt(e.target.value)
-                        }
-                      }))}
-                    />
-                    <div className="form-help">학습 에포크 수 (1-10)</div>
-                  </div>
+                                      <div className="form-group">
+                      <label htmlFor="num-epochs">{getTranslation('epochs', language)}:</label>
+                      <input
+                        id="num-epochs"
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={tuningConfig.training.num_train_epochs}
+                        onChange={(e) => setTuningConfig(prev => ({
+                          ...prev,
+                          training: {
+                            ...prev.training,
+                            num_train_epochs: parseInt(e.target.value)
+                          }
+                        }))}
+                      />
+                      <div className="form-help">{getTranslation('epochsHelp', language)}</div>
+                    </div>
                   
-                  <div className="form-group">
-                    <label htmlFor="batch-size">Batch Size:</label>
-                    <input
-                      id="batch-size"
-                      type="number"
-                      min="1"
-                      max="8"
-                      value={tuningConfig.training.per_device_train_batch_size}
-                      onChange={(e) => setTuningConfig(prev => ({
-                        ...prev,
-                        training: {
-                          ...prev.training,
-                          per_device_train_batch_size: parseInt(e.target.value),
-                          per_device_eval_batch_size: parseInt(e.target.value)
-                        }
-                      }))}
-                    />
-                    <div className="form-help">배치 크기 (1-8)</div>
-                  </div>
+                                      <div className="form-group">
+                      <label htmlFor="batch-size">{getTranslation('batchSize', language)}:</label>
+                      <input
+                        id="batch-size"
+                        type="number"
+                        min="1"
+                        max="8"
+                        value={tuningConfig.training.per_device_train_batch_size}
+                        onChange={(e) => setTuningConfig(prev => ({
+                          ...prev,
+                          training: {
+                            ...prev.training,
+                            per_device_train_batch_size: parseInt(e.target.value),
+                            per_device_eval_batch_size: parseInt(e.target.value)
+                          }
+                        }))}
+                      />
+                      <div className="form-help">{getTranslation('batchSizeHelp', language)}</div>
+                    </div>
                   
-                  <div className="form-group">
-                    <label htmlFor="gradient-accumulation">Gradient Accumulation:</label>
-                    <input
-                      id="gradient-accumulation"
-                      type="number"
-                      min="1"
-                      max="16"
-                      value={tuningConfig.training.gradient_accumulation_steps}
-                      onChange={(e) => setTuningConfig(prev => ({
-                        ...prev,
-                        training: {
-                          ...prev.training,
-                          gradient_accumulation_steps: parseInt(e.target.value)
-                        }
-                      }))}
-                    />
-                    <div className="form-help">그래디언트 누적 스텝 (1-16)</div>
-                  </div>
+                                      <div className="form-group">
+                      <label htmlFor="gradient-accumulation">{getTranslation('gradientAccumulation', language)}:</label>
+                      <input
+                        id="gradient-accumulation"
+                        type="number"
+                        min="1"
+                        max="16"
+                        value={tuningConfig.training.gradient_accumulation_steps}
+                        onChange={(e) => setTuningConfig(prev => ({
+                          ...prev,
+                          training: {
+                            ...prev.training,
+                            gradient_accumulation_steps: parseInt(e.target.value)
+                          }
+                        }))}
+                      />
+                      <div className="form-help">{getTranslation('gradientAccumulationHelp', language)}</div>
+                    </div>
                   
-                  <div className="form-group">
-                    <label htmlFor="learning-rate">Learning Rate:</label>
-                    <input
-                      id="learning-rate"
-                      type="number"
-                      min="0.00001"
-                      max="0.01"
-                      step="0.00001"
-                      value={tuningConfig.training.learning_rate}
-                      onChange={(e) => setTuningConfig(prev => ({
-                        ...prev,
-                        training: {
-                          ...prev.training,
-                          learning_rate: parseFloat(e.target.value)
-                        }
-                      }))}
-                    />
-                    <div className="form-help">학습률 (0.00001-0.01)</div>
-                  </div>
+                                      <div className="form-group">
+                      <label htmlFor="learning-rate">{getTranslation('learningRate', language)}:</label>
+                      <input
+                        id="learning-rate"
+                        type="number"
+                        min="0.00001"
+                        max="0.01"
+                        step="0.00001"
+                        value={tuningConfig.training.learning_rate}
+                        onChange={(e) => setTuningConfig(prev => ({
+                          ...prev,
+                          training: {
+                            ...prev.training,
+                            learning_rate: parseFloat(e.target.value)
+                          }
+                        }))}
+                      />
+                      <div className="form-help">{getTranslation('learningRateHelp', language)}</div>
+                    </div>
                   
-                  <div className="form-group">
-                    <label htmlFor="warmup-steps">Warmup Steps:</label>
-                    <input
-                      id="warmup-steps"
-                      type="number"
-                      min="0"
-                      max="1000"
-                      value={tuningConfig.training.warmup_steps}
-                      onChange={(e) => setTuningConfig(prev => ({
-                        ...prev,
-                        training: {
-                          ...prev.training,
-                          warmup_steps: parseInt(e.target.value)
-                        }
-                      }))}
-                    />
-                    <div className="form-help">워밍업 스텝 수 (0-1000)</div>
-                  </div>
+                                      <div className="form-group">
+                      <label htmlFor="warmup-steps">{getTranslation('warmupSteps', language)}:</label>
+                      <input
+                        id="warmup-steps"
+                        type="number"
+                        min="0"
+                        max="1000"
+                        value={tuningConfig.training.warmup_steps}
+                        onChange={(e) => setTuningConfig(prev => ({
+                          ...prev,
+                          training: {
+                            ...prev.training,
+                            warmup_steps: parseInt(e.target.value)
+                          }
+                        }))}
+                      />
+                      <div className="form-help">{getTranslation('warmupStepsHelp', language)}</div>
+                    </div>
                   
-                  <div className="form-group">
-                    <label htmlFor="logging-steps">Logging Steps:</label>
-                    <input
-                      id="logging-steps"
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={tuningConfig.training.logging_steps}
-                      onChange={(e) => setTuningConfig(prev => ({
-                        ...prev,
-                        training: {
-                          ...prev.training,
-                          logging_steps: parseInt(e.target.value)
-                        }
-                      }))}
-                    />
-                    <div className="form-help">로깅 간격 (1-100)</div>
-                  </div>
+                                      <div className="form-group">
+                      <label htmlFor="logging-steps">{getTranslation('loggingSteps', language)}:</label>
+                      <input
+                        id="logging-steps"
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={tuningConfig.training.logging_steps}
+                        onChange={(e) => setTuningConfig(prev => ({
+                          ...prev,
+                          training: {
+                            ...prev.training,
+                            logging_steps: parseInt(e.target.value)
+                          }
+                        }))}
+                      />
+                      <div className="form-help">{getTranslation('loggingStepsHelp', language)}</div>
+                    </div>
                 </div>
               </div>
 
               {/* 진행 상황 표시 */}
               {tuningProgress && (
                 <div className="tuning-progress-section">
-                  <h3>진행 상황</h3>
+                  <h3>{getTranslation('progress', language)}</h3>
                   <div className="tuning-progress-message">
                     {tuningProgress}
                   </div>
@@ -4508,7 +4510,7 @@ function App() {
                 className="tuning-action-btn secondary"
                 onClick={() => setShowTuningSettings(false)}
               >
-                취소
+                {getTranslation('cancel', language)}
               </button>
               <button 
                 className="tuning-action-btn primary"
@@ -4518,7 +4520,7 @@ function App() {
                 }}
               >
                 <Save size={16} />
-                설정 저장 및 닫기
+                {getTranslation('saveSettingsAndClose', language)}
               </button>
             </div>
           </div>
