@@ -21,8 +21,10 @@ const NgramPatterns = ({ patterns, language = 'ko' }) => {
       if (response.ok) {
         const data = await response.json();
         return data.llm_risk_score || 0.0;
+      } else {
+        console.warn('LLM 위험도 평가 API 응답 오류:', response.status);
+        return 0.0;
       }
-      return 0.0;
     } catch (error) {
       console.error('LLM 위험도 평가 오류:', error);
       return 0.0;
@@ -35,9 +37,12 @@ const NgramPatterns = ({ patterns, language = 'ko' }) => {
       setIsEvaluating(true);
       const evaluatePatterns = async () => {
         const scores = {};
+        let hasEvaluatedTokens = false;
+        
         for (let i = 0; i < patterns.length; i++) {
           const pattern = patterns[i];
           if (pattern.security_tokens && pattern.security_tokens.length > 0) {
+            hasEvaluatedTokens = true;
             const tokens = pattern.security_tokens.map(token => ({
               text: token.token_text,
               category: token.category,
@@ -47,10 +52,20 @@ const NgramPatterns = ({ patterns, language = 'ko' }) => {
             scores[i] = riskScore;
           }
         }
+        
         setLlmRiskScores(scores);
         setIsEvaluating(false);
+        
+        // 평가할 토큰이 없으면 콘솔에 메시지 출력
+        if (!hasEvaluatedTokens) {
+          console.log('평가할 보안 토큰이 없습니다.');
+        }
       };
       evaluatePatterns();
+    } else {
+      // 패턴이 없으면 평가 상태를 false로 설정
+      setIsEvaluating(false);
+      setLlmRiskScores({});
     }
   }, [patterns, language]);
 
@@ -80,6 +95,7 @@ const NgramPatterns = ({ patterns, language = 'ko' }) => {
         pattern: "패턴",
         llmRiskScore: "LLM 위험도",
         evaluating: "평가 중...",
+        evaluationUnavailable: "API 키 필요",
         contextualAnalysis: "맥락 분석"
       },
       en: {
@@ -105,6 +121,7 @@ const NgramPatterns = ({ patterns, language = 'ko' }) => {
         pattern: "Pattern",
         llmRiskScore: "LLM Risk Score",
         evaluating: "Evaluating...",
+        evaluationUnavailable: "API Key Required",
         contextualAnalysis: "Contextual Analysis"
       }
     };
@@ -181,6 +198,9 @@ const NgramPatterns = ({ patterns, language = 'ko' }) => {
               )}
               {isEvaluating && llmRiskScores[index] === undefined && (
                 <span className="evaluating-status">{getTranslation('evaluating', language)}</span>
+              )}
+              {!isEvaluating && llmRiskScores[index] === undefined && patterns[index]?.security_tokens?.length > 0 && (
+                <span className="evaluation-unavailable">{getTranslation('evaluationUnavailable', language)}</span>
               )}
             </div>
             

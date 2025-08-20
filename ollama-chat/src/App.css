@@ -3666,6 +3666,15 @@ body {
   font-style: italic;
 }
 
+.evaluation-unavailable {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-style: italic;
+  background: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
 .no-patterns {
   color: #6b7280;
   font-style: italic;
