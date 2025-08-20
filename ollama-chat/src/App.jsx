@@ -2529,13 +2529,35 @@ function App() {
       
       const result = await response.json()
       if (result.success) {
-        // 새로 생성된 키워드로 편집 데이터 업데이트
-        setKeywordEditData(result.total_keywords)
-        setSecurityKeywords(result.total_keywords)
+        // 선택된 카테고리의 키워드만 표시하도록 수정
+        let displayKeywords = {}
+        
+        if (keywordGenerationPromptType === 'all') {
+          // 전체 선택인 경우 생성된 키워드만 표시
+          displayKeywords = result.generated_keywords
+        } else {
+          // 개별 카테고리 선택인 경우 해당 카테고리의 키워드만 표시
+          const categoryMapping = {
+            'ownerChange': '시스템조작',
+            'sexualExpression': '성적표현',
+            'profanityExpression': '데이터유출',
+            'financialSecurityIncident': '금융보안'
+          }
+          const targetCategory = categoryMapping[keywordGenerationPromptType]
+          
+          if (targetCategory && result.generated_keywords[targetCategory]) {
+            displayKeywords[targetCategory] = result.generated_keywords[targetCategory]
+          }
+        }
+        
+        // 새로 생성된 키워드로 편집 데이터 업데이트 (선택된 카테고리만)
+        setKeywordEditData(displayKeywords)
+        setSecurityKeywords(result.total_keywords) // 전체 키워드는 백엔드에 저장
         setDatasetGenerationProgress(getTranslation('keywordsGeneratedForPromptType', language).replace('{promptType}', keywordGenerationPromptType))
         
         // 생성된 키워드 정보 표시
         console.log('생성된 키워드:', result.generated_keywords)
+        console.log('표시할 키워드:', displayKeywords)
       } else {
         setDatasetGenerationProgress(`키워드 생성 오류: ${result.error}`)
       }
