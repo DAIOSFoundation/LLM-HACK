@@ -3587,66 +3587,66 @@ body {
   font-weight: 600;
 }
 
-/* N-gram 설명 섹션 */
-.ngram-explanation-section {
-  margin-bottom: 1.5rem;
+/* N-gram 상세 설명 섹션 (토글 형식 내부) */
+.detailed-explanation-section {
+  margin-top: 1.5rem;
   padding: 1rem;
   background: #f8f9fa;
   border-radius: 8px;
   border-left: 4px solid #667eea;
 }
 
-.analysis-description {
-  color: #555;
+.detailed-explanation-section h6 {
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
   margin-bottom: 1rem;
-  line-height: 1.6;
-  font-size: 0.9rem;
 }
 
-.color-explanation {
+.detailed-explanation-section .color-explanation {
   margin-bottom: 1.5rem;
 }
 
-.color-explanation h5 {
+.detailed-explanation-section .color-explanation h6 {
   color: #333;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
 
-.color-explanation p {
+.detailed-explanation-section .color-explanation p {
   color: #666;
   margin-bottom: 0.25rem;
   font-size: 0.9rem;
 }
 
-.risk-calculation-explanation {
+.detailed-explanation-section .risk-calculation-explanation {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
-.individual-risk,
-.composite-risk {
-  padding: 1rem;
+.detailed-explanation-section .individual-risk,
+.detailed-explanation-section .composite-risk {
+  padding: 0.75rem;
   background: white;
   border-radius: 6px;
   border: 1px solid #e1e5e9;
 }
 
-.individual-risk h5,
-.composite-risk h5 {
+.detailed-explanation-section .individual-risk h6,
+.detailed-explanation-section .composite-risk h6 {
   color: #333;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
 
-.individual-risk p,
-.composite-risk p {
+.detailed-explanation-section .individual-risk p,
+.detailed-explanation-section .composite-risk p {
   color: #666;
   margin-bottom: 0.25rem;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   line-height: 1.4;
 }
 

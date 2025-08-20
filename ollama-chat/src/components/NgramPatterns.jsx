@@ -168,34 +168,6 @@ const NgramPatterns = ({ patterns, language = 'ko' }) => {
 
   return (
     <div className="ngram-patterns">
-      <h4>{getTranslation('ngramPatternAnalysis', language)}</h4>
-      
-      {/* N-gram 패턴 분석 설명 섹션 */}
-      <div className="ngram-explanation-section">
-        <p className="analysis-description">{getTranslation('ngramAnalysisDescription', language)}</p>
-        
-        <div className="color-explanation">
-          <h5>{getTranslation('tokenColorExplanation', language)}</h5>
-          <p>{getTranslation('backgroundColorExplanation', language)}</p>
-          <p>{getTranslation('borderColorExplanation', language)}</p>
-        </div>
-        
-        <div className="risk-calculation-explanation">
-          <div className="individual-risk">
-            <h5>{getTranslation('individualRiskCalculation', language)}</h5>
-            <p>{getTranslation('individualRiskMethod', language)}</p>
-            <p>{getTranslation('individualRiskLevels', language)}</p>
-          </div>
-          
-          <div className="composite-risk">
-            <h5>{getTranslation('compositeRiskCalculation', language)}</h5>
-            <p>{getTranslation('compositeRiskMethod', language)}</p>
-            <p>{getTranslation('compositeRiskFactors', language)}</p>
-            <p>{getTranslation('compositeRiskScore', language)}</p>
-          </div>
-        </div>
-      </div>
-      
       <div className="patterns-container">
         {patterns.map((pattern, index) => (
           <div key={index} className="ngram-pattern">

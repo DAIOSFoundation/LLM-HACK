@@ -3519,6 +3519,32 @@ function App() {
                           <li><strong>{getTranslation('context', language)}:</strong> {getTranslation('contextDesc', language)}</li>
                         </ul>
                       </div>
+                      
+                      {/* 새로운 상세 설명 섹션 */}
+                      <div className="detailed-explanation-section">
+                        <h6>🔍 {getTranslation('ngramAnalysisDescription', language)}</h6>
+                        
+                        <div className="color-explanation">
+                          <h6>🎨 {getTranslation('tokenColorExplanation', language)}</h6>
+                          <p>{getTranslation('backgroundColorExplanation', language)}</p>
+                          <p>{getTranslation('borderColorExplanation', language)}</p>
+                        </div>
+                        
+                        <div className="risk-calculation-explanation">
+                          <div className="individual-risk">
+                            <h6>📈 {getTranslation('individualRiskCalculation', language)}</h6>
+                            <p>{getTranslation('individualRiskMethod', language)}</p>
+                            <p>{getTranslation('individualRiskLevels', language)}</p>
+                          </div>
+                          
+                          <div className="composite-risk">
+                            <h6>🤖 {getTranslation('compositeRiskCalculation', language)}</h6>
+                            <p>{getTranslation('compositeRiskMethod', language)}</p>
+                            <p>{getTranslation('compositeRiskFactors', language)}</p>
+                            <p>{getTranslation('compositeRiskScore', language)}</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <NgramPatterns 
