@@ -992,6 +992,9 @@ def set_security_keywords():
 def generate_security_keywords():
     """Gemini LLM을 사용한 보안 키워드 생성 API"""
     try:
+        # 언어 파라미터 가져오기 (기본값: 한국어)
+        language = request.args.get('language', 'ko')
+        
         data = request.json
         prompt_type = data.get('promptType', '')
         selected_category = data.get('selectedCategory', '')
@@ -1060,9 +1063,6 @@ def generate_security_keywords():
             error_msg = MESSAGES.get(language, MESSAGES['ko'])['no_data_for_prompt_type'].replace('{prompt_type}', prompt_type)
             return jsonify({'error': error_msg}), 404
         
-        # 언어 파라미터 가져오기 (기본값: 한국어)
-        language = request.args.get('language', 'ko')
-        
         # Gemini에게 전달할 프롬프트 생성
         prompt = create_keyword_generation_prompt(prompt_type, filtered_data, language, selected_category)
         
@@ -1092,9 +1092,6 @@ def generate_security_keywords():
                 existing_keywords = set(SECURITY_KEYWORDS[category][risk_level])
                 new_keywords = [kw for kw in keywords if kw not in existing_keywords]
                 SECURITY_KEYWORDS[category][risk_level].extend(new_keywords)
-        
-        # 언어 파라미터 가져오기 (기본값: 한국어)
-        language = request.args.get('language', 'ko')
         
         # 파일에 저장
         if save_security_keywords_to_file(SECURITY_KEYWORDS, language):
@@ -1426,7 +1423,7 @@ def analyze_security_cooccurrence():
             return jsonify(risk_analysis), 400
         
         # 연관성 그래프 데이터 생성
-        graph_data = create_cooccurrence_graph(risk_analysis)
+        graph_data = create_cooccurrence_graph(risk_analysis, language)
         
         # 상세 분석 통계 생성
         detailed_stats = generate_detailed_analysis_stats(risk_analysis, text)
@@ -1452,7 +1449,17 @@ def analyze_security_tokens(text, language='ko'):
         total_risk_score = 0
         
         # 언어에 따라 다른 보안 키워드 사용
-        security_keywords = SECURITY_KEYWORDS_EN if language == 'en' else SECURITY_KEYWORDS
+        if language == 'en':
+            # 영어 키워드 파일 로드
+            if SECURITY_KEYWORDS_EN.exists():
+                with open(SECURITY_KEYWORDS_EN, 'r', encoding='utf-8') as f:
+                    security_keywords = json.load(f)
+            else:
+                # 영어 파일이 없으면 한국어 키워드 사용
+                security_keywords = SECURITY_KEYWORDS
+        else:
+            # 한국어 키워드 사용
+            security_keywords = SECURITY_KEYWORDS
         
         for category, risk_levels in security_keywords.items():
             category_tokens = []
@@ -2427,7 +2434,7 @@ def calculate_risk_multiplier(info1, info2):
     
     return base_multiplier
 
-def create_cooccurrence_graph(risk_analysis):
+def create_cooccurrence_graph(risk_analysis, language='ko'):
     """연관성 그래프 데이터 생성"""
     nodes = []
     edges = []
@@ -2435,8 +2442,21 @@ def create_cooccurrence_graph(risk_analysis):
     # 모든 키워드 토큰들을 노드로 생성
     all_token_nodes = {}
     
+    # 언어에 따라 다른 보안 키워드 사용
+    if language == 'en':
+        # 영어 키워드 파일 로드
+        if SECURITY_KEYWORDS_EN.exists():
+            with open(SECURITY_KEYWORDS_EN, 'r', encoding='utf-8') as f:
+                security_keywords = json.load(f)
+        else:
+            # 영어 파일이 없으면 한국어 키워드 사용
+            security_keywords = SECURITY_KEYWORDS
+    else:
+        # 한국어 키워드 사용
+        security_keywords = SECURITY_KEYWORDS
+    
     # SECURITY_KEYWORDS에서 모든 토큰 추출
-    for category, risk_levels in SECURITY_KEYWORDS.items():
+    for category, risk_levels in security_keywords.items():
         for risk_level, keywords in risk_levels.items():
             for keyword in keywords:
                 if keyword not in all_token_nodes:
@@ -2471,7 +2491,7 @@ def create_cooccurrence_graph(risk_analysis):
     
     # 카테고리별 대표 노드 추가
     category_nodes = {}
-    for category in SECURITY_KEYWORDS.keys():
+    for category in security_keywords.keys():
         category_node_id = f"category_{category}"
         category_nodes[category] = category_node_id
         nodes.append({

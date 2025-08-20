@@ -1,11 +1,40 @@
 import React from 'react';
 
-const NgramPatterns = ({ patterns }) => {
+const NgramPatterns = ({ patterns, language = 'ko' }) => {
+  // 번역 함수
+  const getTranslation = (key, lang) => {
+    const translations = {
+      ko: {
+        ngramPatterns: "N-gram 패턴",
+        noPatternsDetected: "감지된 n-gram 패턴이 없습니다.",
+        ngramPatternAnalysis: "N-gram 패턴 분석",
+        patternSize: "4-gram",
+        patternWeight: "가중치",
+        securityTokens: "보안 토큰들",
+        contextBefore: "이전",
+        contextAfter: "이후",
+        pattern: "패턴"
+      },
+      en: {
+        ngramPatterns: "N-gram Patterns",
+        noPatternsDetected: "No n-gram patterns detected.",
+        ngramPatternAnalysis: "N-gram Pattern Analysis",
+        patternSize: "4-gram",
+        patternWeight: "Weight",
+        securityTokens: "Security Tokens",
+        contextBefore: "Before",
+        contextAfter: "After",
+        pattern: "Pattern"
+      }
+    };
+    return translations[lang]?.[key] || key;
+  };
+
   if (!patterns || patterns.length === 0) {
     return (
       <div className="ngram-patterns">
-        <h4>N-gram 패턴</h4>
-        <p className="no-patterns">감지된 n-gram 패턴이 없습니다.</p>
+        <h4>{getTranslation('ngramPatterns', language)}</h4>
+        <p className="no-patterns">{getTranslation('noPatternsDetected', language)}</p>
       </div>
     );
   }
@@ -31,26 +60,26 @@ const NgramPatterns = ({ patterns }) => {
 
   return (
     <div className="ngram-patterns">
-      <h4>N-gram 패턴 분석</h4>
+      <h4>{getTranslation('ngramPatternAnalysis', language)}</h4>
       <div className="patterns-container">
         {patterns.map((pattern, index) => (
           <div key={index} className="ngram-pattern">
             <div className="pattern-header">
-              <span className="pattern-size">4-gram</span>
-              <span className="pattern-weight">가중치: {(pattern.weight || 0).toFixed(2)}</span>
+              <span className="pattern-size">{getTranslation('patternSize', language)}</span>
+              <span className="pattern-weight">{getTranslation('patternWeight', language)}: {(pattern.weight || 0).toFixed(2)}</span>
             </div>
             
             <div className="pattern-tokens">
               <span className="token-item" style={{ backgroundColor: '#f3f4f6', borderColor: '#d1d5db' }}>
                 <span className="token-text">{pattern.ngram}</span>
                 <span className="token-category">N-gram</span>
-                <span className="token-risk">패턴</span>
+                <span className="token-risk">{getTranslation('pattern', language)}</span>
               </span>
             </div>
             
             {pattern.security_tokens && pattern.security_tokens.length > 0 && (
               <div className="pattern-tokens">
-                <h5>보안 토큰들:</h5>
+                <h5>{getTranslation('securityTokens', language)}:</h5>
                 {pattern.security_tokens.map((tokenInfo, tokenIndex) => (
                   <span
                     key={tokenIndex}
@@ -71,11 +100,11 @@ const NgramPatterns = ({ patterns }) => {
             {pattern.context && (
               <div className="pattern-context">
                 <div className="context-before">
-                  <span className="context-label">이전:</span>
+                  <span className="context-label">{getTranslation('contextBefore', language)}:</span>
                   <span className="context-text">{pattern.context.before}</span>
                 </div>
                 <div className="context-after">
-                  <span className="context-label">이후:</span>
+                  <span className="context-label">{getTranslation('contextAfter', language)}:</span>
                   <span className="context-text">{pattern.context.after}</span>
                 </div>
               </div>

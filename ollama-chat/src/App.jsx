@@ -3318,7 +3318,11 @@ function App() {
                 <h4>{getTranslation('analysisResultSummary', language)}</h4>
                 <div className="summary-one-line">
                   <span className="summary-text">
-                    📊 {cooccurrenceData.text_length.toLocaleString()}자 → {cooccurrenceData.graph_data.total_nodes}개 토큰 → {cooccurrenceData.graph_data.total_edges}개 패턴 → {(cooccurrenceData.risk_analysis.total_risk_score * 100).toFixed(1)}% 위험도
+                    {getTranslation('analysisSummaryText', language)
+                      .replace('{charCount}', cooccurrenceData.text_length.toLocaleString())
+                      .replace('{tokenCount}', cooccurrenceData.graph_data.total_nodes)
+                      .replace('{patternCount}', cooccurrenceData.graph_data.total_edges)
+                      .replace('{riskScore}', (cooccurrenceData.risk_analysis.total_risk_score * 100).toFixed(1))}
                   </span>
                 </div>
                 
@@ -3479,6 +3483,7 @@ function App() {
                   </div>
                   <NgramPatterns 
                     patterns={cooccurrenceData.risk_analysis.cooccurrence_patterns.ngram_patterns}
+                    language={language}
                   />
                 </div>
               )}
