@@ -203,7 +203,7 @@ export const translations = {
     contextText: "컨텍스트 텍스트",
     llmRiskScore: "LLM 위험도",
     evaluating: "평가 중...",
-    contextualAnalysis: "맥락 분석"
+    contextualAnalysis: "맥락 분석",
     
     // 카테고리명 매핑
     categoryMapping: {
