@@ -2521,7 +2521,10 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ promptType: keywordGenerationPromptType })
+        body: JSON.stringify({ 
+          promptType: keywordGenerationPromptType,
+          selectedCategory: keywordGenerationPromptType // 선택된 카테고리 정보 추가
+        })
       })
       
       const result = await response.json()

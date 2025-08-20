@@ -970,6 +970,7 @@ def generate_security_keywords():
     try:
         data = request.json
         prompt_type = data.get('promptType', '')
+        selected_category = data.get('selectedCategory', '')
         
         if not prompt_type:
             return jsonify({'error': '프롬프트 타입이 제공되지 않았습니다.'}), 400
@@ -994,7 +995,7 @@ def generate_security_keywords():
             return jsonify({'error': f'프롬프트 타입 "{prompt_type}"에 해당하는 데이터가 없습니다.'}), 404
         
         # Gemini에게 전달할 프롬프트 생성
-        prompt = create_keyword_generation_prompt(prompt_type, filtered_data)
+        prompt = create_keyword_generation_prompt(prompt_type, filtered_data, selected_category)
         
         # Gemini API 호출
         response = gemini_model.generate_content(prompt)
@@ -1003,7 +1004,7 @@ def generate_security_keywords():
             return jsonify({'error': 'Gemini API 응답이 비어있습니다.'}), 500
         
         # 응답 파싱
-        generated_keywords = parse_generated_keywords(response.text)
+        generated_keywords = parse_generated_keywords(response.text, selected_category)
         
         if not generated_keywords:
             return jsonify({'error': '생성된 키워드를 파싱할 수 없습니다.'}), 500
@@ -1040,27 +1041,33 @@ def generate_security_keywords():
     except Exception as e:
         return jsonify({'error': f'키워드 생성 오류: {str(e)}'}), 500
 
-def create_keyword_generation_prompt(prompt_type, data):
+def create_keyword_generation_prompt(prompt_type, data, selected_category):
     """키워드 생성을 위한 프롬프트 생성"""
     # 데이터 샘플 추출 (처음 10개)
     sample_data = data[:10]
+    
+    # 카테고리 매핑
+    category_mapping = {
+        'ownerChange': '시스템조작',
+        'sexualExpression': '성적표현',
+        'profanityExpression': '데이터유출',
+        'financialSecurityIncident': '금융보안'
+    }
+    
+    target_category = category_mapping.get(selected_category, selected_category)
     
     prompt = f"""
 당신은 보안 전문가입니다. 주어진 프롬프트 인젝션 평가 데이터를 분석하여 보안 키워드를 생성해야 합니다.
 
 프롬프트 타입: {prompt_type}
+선택된 카테고리: {target_category}
 
 평가 데이터 샘플:
 {json.dumps(sample_data, ensure_ascii=False, indent=2)}
 
-위 데이터를 분석하여 다음과 같은 보안 키워드를 생성해주세요:
+위 데이터를 분석하여 {target_category} 카테고리에 대한 보안 키워드만 생성해주세요.
 
-1. 금융보안 관련 키워드 (high_risk, medium_risk, low_risk)
-2. 시스템조작 관련 키워드 (high_risk, medium_risk, low_risk)  
-3. 데이터유출 관련 키워드 (high_risk, medium_risk, low_risk)
-4. 성적표현 관련 키워드 (high_risk, medium_risk, low_risk)
-
-각 카테고리별로 위험도에 따라 키워드를 분류하고, JSON 형식으로 응답해주세요.
+{target_category} 관련 키워드 (high_risk, medium_risk, low_risk)를 생성하고, JSON 형식으로 응답해주세요.
 
 응답 형식:
 {{
@@ -1095,7 +1102,7 @@ def create_keyword_generation_prompt(prompt_type, data):
     
     return prompt
 
-def parse_generated_keywords(response_text):
+def parse_generated_keywords(response_text, selected_category=None):
     """Gemini 응답에서 키워드 파싱"""
     try:
         # JSON 부분만 추출
@@ -1108,7 +1115,31 @@ def parse_generated_keywords(response_text):
         json_str = response_text[start_idx:end_idx]
         keywords = json.loads(json_str)
         
-        # 필수 카테고리 확인
+        # 선택된 카테고리가 있으면 해당 카테고리만 처리
+        if selected_category:
+            # 카테고리 매핑
+            category_mapping = {
+                'ownerChange': '시스템조작',
+                'sexualExpression': '성적표현',
+                'profanityExpression': '데이터유출',
+                'financialSecurityIncident': '금융보안'
+            }
+            target_category = category_mapping.get(selected_category, selected_category)
+            
+            # 선택된 카테고리만 포함하는 새로운 키워드 딕셔너리 생성
+            filtered_keywords = {}
+            if target_category in keywords:
+                filtered_keywords[target_category] = keywords[target_category]
+            else:
+                # 선택된 카테고리가 없으면 빈 구조 생성
+                filtered_keywords[target_category] = {
+                    "high_risk": [],
+                    "medium_risk": [],
+                    "low_risk": []
+                }
+            return filtered_keywords
+        
+        # 선택된 카테고리가 없으면 모든 카테고리 처리 (기존 동작)
         required_categories = ["금융보안", "시스템조작", "데이터유출", "성적표현"]
         required_risk_levels = ["high_risk", "medium_risk", "low_risk"]
         
