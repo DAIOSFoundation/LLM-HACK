@@ -2537,7 +2537,12 @@ function App() {
           displayKeywords = result.generated_keywords
         } else {
           // 개별 카테고리 선택인 경우 해당 카테고리의 키워드만 표시
-          const categoryMapping = {
+          const categoryMapping = language === 'en' ? {
+            'ownerChange': 'System Manipulation',
+            'sexualExpression': 'Sexual Expression',
+            'profanityExpression': 'Data Leakage',
+            'financialSecurityIncident': 'Financial Security'
+          } : {
             'ownerChange': '시스템조작',
             'sexualExpression': '성적표현',
             'profanityExpression': '데이터유출',
