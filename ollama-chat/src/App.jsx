@@ -2965,7 +2965,7 @@ function App() {
                 <div className="threshold-header">
                   <label htmlFor="dataset-risk-threshold">{getTranslation('riskThreshold', language)}: {datasetRiskThreshold.toFixed(1)}</label>
                   <span className="threshold-description">
-                    {getTranslation('riskThresholdDescription', language).replace('{threshold}', datasetRiskThreshold.toFixed(1))}
+                    {getTranslation('datasetRiskThresholdDescription', language).replace('{threshold}', datasetRiskThreshold.toFixed(1))}
                   </span>
                 </div>
                 <div className="threshold-slider-container">
