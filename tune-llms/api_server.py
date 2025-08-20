@@ -32,7 +32,16 @@ CORS(app, resources={
 PROJECT_ROOT = Path(__file__).parent.parent
 EVAL_JSON_PATH = PROJECT_ROOT / "ollama-chat" / "public" / "eval.json"
 RESULT_JSON_PATH = PROJECT_ROOT / "ollama-chat" / "public" / "result.json"
-SECURITY_KEYWORDS_FILE = PROJECT_ROOT / "ollama-chat" / "public" / "security.json"
+SECURITY_KEYWORDS_FILE_KO = PROJECT_ROOT / "ollama-chat" / "public" / "security.json"
+SECURITY_KEYWORDS_FILE_EN = PROJECT_ROOT / "ollama-chat" / "public" / "security_en.json"
+
+# 다국어 데이터셋 경로
+SECURITY_DATASET_KO = PROJECT_ROOT / "tune-llms" / "data" / "security_dataset.json"
+SECURITY_DATASET_EN = PROJECT_ROOT / "tune-llms" / "data" / "security_dataset_en.json"
+
+# 다국어 보안 키워드 경로
+SECURITY_KEYWORDS_KO = PROJECT_ROOT / "tune-llms" / "data" / "security_keywords.json"
+SECURITY_KEYWORDS_EN = PROJECT_ROOT / "tune-llms" / "data" / "security_keywords_en.json"
 
 # 파인튜닝 상태 파일 경로
 TUNING_STATUS_FILE = PROJECT_ROOT / "tune-llms" / "tuning_status.json"
@@ -106,11 +115,12 @@ def calculate_model_size(model_path):
         print(f"모델 크기 계산 오류: {e}")
         return 0
 
-def load_security_keywords_from_file():
+def load_security_keywords_from_file(language='ko'):
     """security.json 파일에서 보안 키워드를 로드합니다."""
     try:
-        if SECURITY_KEYWORDS_FILE.exists():
-            with open(SECURITY_KEYWORDS_FILE, 'r', encoding='utf-8') as f:
+        security_file = SECURITY_KEYWORDS_FILE_EN if language == 'en' else SECURITY_KEYWORDS_FILE_KO
+        if security_file.exists():
+            with open(security_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
         else:
             # 기본 키워드 반환
@@ -119,13 +129,14 @@ def load_security_keywords_from_file():
         print(f"보안 키워드 파일 로드 오류: {e}")
         return get_default_security_keywords()
 
-def save_security_keywords_to_file(keywords):
+def save_security_keywords_to_file(keywords, language='ko'):
     """보안 키워드를 security.json 파일에 저장합니다."""
     try:
+        security_file = SECURITY_KEYWORDS_FILE_EN if language == 'en' else SECURITY_KEYWORDS_FILE_KO
         # 디렉토리가 없으면 생성
-        SECURITY_KEYWORDS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        security_file.parent.mkdir(parents=True, exist_ok=True)
         
-        with open(SECURITY_KEYWORDS_FILE, 'w', encoding='utf-8') as f:
+        with open(security_file, 'w', encoding='utf-8') as f:
             json.dump(keywords, f, ensure_ascii=False, indent=2)
         return True
     except Exception as e:
@@ -194,8 +205,8 @@ def get_default_security_keywords():
         }
     }
 
-# 보안 키워드 로드
-SECURITY_KEYWORDS = load_security_keywords_from_file()
+# 보안 키워드 로드 (기본값은 한국어)
+SECURITY_KEYWORDS = load_security_keywords_from_file('ko')
 
 def tokenize_text(text):
     """텍스트를 토크나이저를 사용하여 토큰화 (한국어 최적화)"""
@@ -868,9 +879,42 @@ def load_result():
 def get_security_keywords():
     """보안 키워드 조회 API"""
     try:
+        # 언어 파라미터 받기 (기본값: ko)
+        language = request.args.get('language', 'ko')
+        
+        # 언어에 따라 다른 데이터셋 파일 경로 선택
+        if language == 'en':
+            dataset_path = SECURITY_DATASET_EN
+        else:
+            dataset_path = SECURITY_DATASET_KO
+        
+        # 해당 언어의 데이터셋이 존재하는지 확인
+        if not dataset_path.exists():
+            return jsonify({'error': f'{language} 언어 데이터셋을 찾을 수 없습니다.'}), 404
+        
+        # 데이터셋 파일 읽기
+        with open(dataset_path, 'r', encoding='utf-8') as f:
+            dataset_data = json.load(f)
+        
+        # 언어에 따라 다른 보안 키워드 파일 경로 선택
+        if language == 'en':
+            keywords_path = SECURITY_KEYWORDS_EN
+        else:
+            keywords_path = SECURITY_KEYWORDS_KO
+        
+        # 해당 언어의 보안 키워드 파일이 존재하는지 확인
+        if not keywords_path.exists():
+            return jsonify({'error': f'{language} 언어 보안 키워드 파일을 찾을 수 없습니다.'}), 404
+        
+        # 보안 키워드 파일 읽기
+        with open(keywords_path, 'r', encoding='utf-8') as f:
+            keywords_data = json.load(f)
+        
         return jsonify({
             'success': True,
-            'keywords': SECURITY_KEYWORDS
+            'keywords': keywords_data,
+            'dataset': dataset_data,
+            'language': language
         })
     except Exception as e:
         return jsonify({'error': f'보안 키워드 조회 오류: {str(e)}'}), 500
@@ -889,8 +933,11 @@ def set_security_keywords():
         global SECURITY_KEYWORDS
         SECURITY_KEYWORDS = new_keywords
         
+        # 언어 파라미터 가져오기 (기본값: 한국어)
+        language = request.args.get('language', 'ko')
+        
         # 파일에 저장
-        if save_security_keywords_to_file(new_keywords):
+        if save_security_keywords_to_file(new_keywords, language):
             return jsonify({
                 'success': True,
                 'message': '보안 키워드가 성공적으로 저장되었습니다.'
@@ -960,8 +1007,11 @@ def generate_security_keywords():
                 new_keywords = [kw for kw in keywords if kw not in existing_keywords]
                 SECURITY_KEYWORDS[category][risk_level].extend(new_keywords)
         
+        # 언어 파라미터 가져오기 (기본값: 한국어)
+        language = request.args.get('language', 'ko')
+        
         # 파일에 저장
-        if save_security_keywords_to_file(SECURITY_KEYWORDS):
+        if save_security_keywords_to_file(SECURITY_KEYWORDS, language):
             return jsonify({
                 'success': True,
                 'message': f'프롬프트 타입 "{prompt_type}"에 대한 보안 키워드가 생성되어 추가되었습니다.',
@@ -2553,7 +2603,8 @@ def update_tuning_progress_from_log():
 if __name__ == '__main__':
     print(f"API 서버 시작 - eval.json 경로: {EVAL_JSON_PATH}")
     print(f"API 서버 시작 - result.json 경로: {RESULT_JSON_PATH}")
-    print(f"API 서버 시작 - security.json 경로: {SECURITY_KEYWORDS_FILE}")
+    print(f"API 서버 시작 - security.json 경로 (한국어): {SECURITY_KEYWORDS_FILE_KO}")
+    print(f"API 서버 시작 - security.json 경로 (영어): {SECURITY_KEYWORDS_FILE_EN}")
     
     # 기존 파인튜닝 상태 로드
     load_tuning_status()

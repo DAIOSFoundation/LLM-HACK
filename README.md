@@ -644,6 +644,18 @@ QRoLA(Quantized Rank-One LoRA) 파인튜닝에 대한 상세한 연구 내용과
 
 ## 🔄 최근 업데이트
 
+### 2025년 8월 7일 (오늘 업데이트) ✅
+- **다국어 지원 시스템 완전 구현**: 한국어/영어 언어 선택 드롭다운 및 모든 UI 요소 다국어 지원
+- **동적 데이터 로딩 시스템**: 언어 선택에 따른 동적 데이터 파일 로딩 (security_dataset.json, security_keywords.json, eval.json, sexual_expressions.json)
+- **중앙화된 번역 관리**: translations.js를 통한 모든 UI 텍스트 중앙 관리
+- **구조화된 프롬프트 다국어 지원**: prompts.js를 통한 시스템 프롬프트 다국어 관리
+- **훈련 데이터 다국어 지원**: trainingData.js를 통한 파인튜닝 데이터 다국어 관리
+- **백엔드 API 다국어 지원**: 언어 파라미터를 받아 해당 언어의 데이터를 서빙하는 API 엔드포인트
+- **Ollama 모델 동적 로딩**: 설치된 Ollama 모델을 실시간으로 가져와 드롭다운에 표시
+- **프롬프트 인젝션 점수 계산 버그 수정**: 영문 설정에서 카테고리 매핑 및 점수 계산 오류 해결
+- **영문 데이터 파일 생성**: security_dataset_en.json, security_keywords_en.json, eval_en.json, sexual_expressions_en.json
+- **변수 초기화 순서 문제 해결**: mappedCategory 변수 선언 순서로 인한 ReferenceError 수정
+
 ### 2025년 8월 (현재 구현 완료) ✅
 - **QRoLA 파인튜닝 성공**: Google Gemma2-2B 모델 보안 강화 파인튜닝 완료
 - **MPS 가속 지원**: Apple Silicon 최적화 및 gradient 문제 해결

@@ -16,9 +16,9 @@ data:
   max_seq_length: 2048
   packing: false
 dataset_info:
-  generated_at: '2025-08-06T17:38:44.207Z'
-  risk_threshold: 0.1
-  total_items: 19
+  generated_at: '2025-08-13T05:34:19.123Z'
+  risk_threshold: 0.2
+  total_items: 21
 dataset_path: data/security_dataset.json
 generation:
   do_sample: true
