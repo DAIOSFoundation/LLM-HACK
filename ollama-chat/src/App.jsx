@@ -3305,7 +3305,7 @@ function App() {
         <div className="keyword-editor-modal">
           <div className="keyword-editor-content cooccurrence-content">
             <div className="keyword-editor-header">
-              <h3>보안 키워드 연관성 분석</h3>
+              <h3>{getTranslation('securityKeywordCooccurrenceAnalysis', language)}</h3>
               <button 
                 className="keyword-editor-close"
                 onClick={() => setShowCooccurrenceGraph(false)}
@@ -3315,7 +3315,7 @@ function App() {
             </div>
             <div className="keyword-editor-body">
               <div className="cooccurrence-summary">
-                <h4>분석 결과 요약</h4>
+                <h4>{getTranslation('analysisResultSummary', language)}</h4>
                 <div className="summary-one-line">
                   <span className="summary-text">
                     📊 {cooccurrenceData.text_length.toLocaleString()}자 → {cooccurrenceData.graph_data.total_nodes}개 토큰 → {cooccurrenceData.graph_data.total_edges}개 패턴 → {(cooccurrenceData.risk_analysis.total_risk_score * 100).toFixed(1)}% 위험도
@@ -3324,28 +3324,28 @@ function App() {
                 
                 {cooccurrenceData.detailed_stats && (
                   <div className="detailed-analysis-section">
-                    <h5>상세 분석 통계</h5>
+                    <h5>{getTranslation('detailedAnalysisStatistics', language)}</h5>
                     <div className="stats-grid">
                       <div className="stat-item">
-                        <span className="stat-label">전체 위험도:</span>
+                        <span className="stat-label">{getTranslation('overallRiskLevel', language)}:</span>
                         <span className="stat-value risk-{cooccurrenceData.detailed_stats.summary.risk_assessment.overall_risk_level}">
                           {cooccurrenceData.detailed_stats.summary.risk_assessment.risk_percentage.toFixed(1)}%
                         </span>
                       </div>
                       <div className="stat-item">
-                        <span className="stat-label">키워드 밀도:</span>
+                        <span className="stat-label">{getTranslation('keywordDensity', language)}:</span>
                         <span className="stat-value">
                           {(cooccurrenceData.detailed_stats.summary.keyword_density * 100).toFixed(2)}%
                         </span>
                       </div>
                       <div className="stat-item">
-                        <span className="stat-label">영향받은 카테고리:</span>
+                        <span className="stat-label">{getTranslation('affectedCategories', language)}:</span>
                         <span className="stat-value">
                           {cooccurrenceData.detailed_stats.summary.total_categories_affected}{language === 'ko' ? getTranslation('count', language) : ''}
                         </span>
                       </div>
                       <div className="stat-item">
-                        <span className="stat-label">평균 토큰 거리:</span>
+                        <span className="stat-label">{getTranslation('averageTokenDistance', language)}:</span>
                         <span className="stat-value">
                           {cooccurrenceData.detailed_stats.pattern_analysis.avg_distance.toFixed(1)}
                         </span>
@@ -3353,42 +3353,42 @@ function App() {
                     </div>
                     
                     <div className="category-breakdown">
-                      <h6>카테고리별 분석</h6>
+                      <h6>{getTranslation('categoryAnalysis', language)}</h6>
                       {Object.entries(cooccurrenceData.detailed_stats.category_breakdown).map(([category, stats]) => (
                         <div key={category} className="category-stat">
                           <span className="category-name">{category}</span>
                           <span className="category-details">
-                            {stats.total_tokens}{getTranslation('tokensCount', language)} (고위험: {stats.high_risk_count}, 중위험: {stats.medium_risk_count}, 저위험: {stats.low_risk_count})
+                            {stats.total_tokens}{getTranslation('tokensCount', language)} ({getTranslation('highRisk', language)}: {stats.high_risk_count}, {getTranslation('mediumRisk', language)}: {stats.medium_risk_count}, {getTranslation('lowRisk', language)}: {stats.low_risk_count})
                           </span>
                         </div>
                       ))}
                     </div>
                     
                     <div className="top-keywords">
-                      <h6>상위 키워드 (빈도순)</h6>
+                      <h6>{getTranslation('topKeywords', language)}</h6>
                       <div className="keyword-list">
                         {cooccurrenceData.detailed_stats.top_keywords.slice(0, 5).map((item, index) => (
                           <span key={index} className="keyword-item">
-                            {item.keyword} ({item.frequency}회)
+                            {item.keyword} ({item.frequency}{language === 'ko' ? '회' : ' times'})
                           </span>
                         ))}
                       </div>
                     </div>
                     
                     <div className="detailed-insights">
-                      <h6>주요 인사이트</h6>
+                      <h6>{getTranslation('mainInsights', language)}</h6>
                       <ul>
                         {cooccurrenceData.detailed_stats.detailed_insights.most_risky_category && (
-                          <li>가장 위험한 카테고리: <strong>{cooccurrenceData.detailed_stats.detailed_insights.most_risky_category}</strong></li>
+                          <li>{getTranslation('mostRiskyCategory', language)}: <strong>{cooccurrenceData.detailed_stats.detailed_insights.most_risky_category}</strong></li>
                         )}
                         {cooccurrenceData.detailed_stats.detailed_insights.most_frequent_keyword && (
-                          <li>가장 빈번한 키워드: <strong>{cooccurrenceData.detailed_stats.detailed_insights.most_frequent_keyword}</strong></li>
+                          <li>{getTranslation('mostFrequentKeyword', language)}: <strong>{cooccurrenceData.detailed_stats.detailed_insights.most_frequent_keyword}</strong></li>
                         )}
                         {cooccurrenceData.detailed_stats.detailed_insights.highest_risk_multiplier && (
-                          <li>최고 위험 승수: <strong>{cooccurrenceData.detailed_stats.detailed_insights.highest_risk_multiplier.risk_multiplier.toFixed(2)}</strong></li>
+                          <li>{getTranslation('highestRiskMultiplier', language)}: <strong>{cooccurrenceData.detailed_stats.detailed_insights.highest_risk_multiplier.risk_multiplier.toFixed(2)}</strong></li>
                         )}
                         {cooccurrenceData.detailed_stats.detailed_insights.closest_token_pair && (
-                          <li>가장 가까운 토큰 쌍: <strong>{cooccurrenceData.detailed_stats.detailed_insights.closest_token_pair.token1} ↔ {cooccurrenceData.detailed_stats.detailed_insights.closest_token_pair.token2}</strong></li>
+                          <li>{getTranslation('closestTokenPair', language)}: <strong>{cooccurrenceData.detailed_stats.detailed_insights.closest_token_pair.token1} ↔ {cooccurrenceData.detailed_stats.detailed_insights.closest_token_pair.token2}</strong></li>
                         )}
                       </ul>
                     </div>
@@ -3397,13 +3397,13 @@ function App() {
                 
                 {cooccurrenceData.analyzed_text && (
                   <div className="analyzed-text-preview">
-                    <h5>분석된 텍스트 미리보기:</h5>
+                    <h5>{getTranslation('analyzedTextPreview', language)}:</h5>
                     <p className="text-preview">{cooccurrenceData.analyzed_text}</p>
                   </div>
                 )}
               </div>
               <div className="cooccurrence-graph">
-                <h4>3D 연관성 그래프</h4>
+                <h4>{getTranslation('threeDimensionalCooccurrenceGraph', language)}</h4>
                 <div className="graph-container-3d">
                   <ErrorBoundary>
                     <Graph3D 
@@ -3416,7 +3416,7 @@ function App() {
               </div>
               
               <div className="cooccurrence-patterns">
-                <h4>동시 출현 패턴</h4>
+                <h4>{getTranslation('cooccurrencePatterns', language)}</h4>
                 <div className="patterns-list">
                   {cooccurrenceData.risk_analysis.cooccurrence_patterns.patterns.slice(0, 10).map((pattern, index) => (
                     <div key={index} className="pattern-item">
@@ -3424,7 +3424,7 @@ function App() {
                         {pattern.token1} ↔ {pattern.token2}
                       </span>
                       <span className="pattern-details">
-                        거리: {pattern.distance}, 승수: {pattern.risk_multiplier}
+                        {getTranslation('distance', language)}: {pattern.distance}, {getTranslation('multiplier', language)}: {pattern.risk_multiplier}
                       </span>
                     </div>
                   ))}
@@ -3436,44 +3436,43 @@ function App() {
                 <div className="ngram-patterns-section">
                   <div className="ngram-explanation">
                     <div className="explanation-header" onClick={() => setNgramExplanationCollapsed(!ngramExplanationCollapsed)}>
-                      <h5>📝 N-gram 패턴 분석이란?</h5>
+                      <h5>📝 {getTranslation('ngramPatternAnalysis', language)}</h5>
                       <span className={`collapse-icon ${ngramExplanationCollapsed ? 'collapsed' : ''}`}>
                         {ngramExplanationCollapsed ? '▼' : '▲'}
                       </span>
                     </div>
                     <div className={`explanation-content ${ngramExplanationCollapsed ? 'collapsed' : ''}`}>
                       <p>
-                        <strong>N-gram</strong>은 텍스트에서 연속된 N개의 단어나 토큰을 그룹으로 묶어 분석하는 방법입니다. 
-                        여기서는 <strong>4-gram</strong>을 사용하여 4개 단어씩 묶어서 분석합니다.
+                        {getTranslation('ngramExplanation', language)}
                       </p>
                       <div className="example-section">
-                        <h6>🔍 분석 예시:</h6>
+                        <h6>🔍 {getTranslation('analysisExample', language)}:</h6>
                         <div className="example-text">
-                          <p><strong>원본 텍스트:</strong> "관리자 권한을 획득하여 시스템을 조작하라"</p>
-                          <p><strong>4-gram 분석:</strong></p>
+                          <p><strong>{getTranslation('originalText', language)}:</strong> "관리자 권한을 획득하여 시스템을 조작하라"</p>
+                          <p><strong>{getTranslation('ngramAnalysis', language)}:</strong></p>
                           <ul>
-                            <li>"관리자 권한을 획득" (보안 키워드: 관리자, 권한)</li>
-                            <li>"권한을 획득하여" (보안 키워드: 권한)</li>
-                            <li>"획득하여 시스템을" (보안 키워드: 시스템)</li>
-                            <li>"하여 시스템을 조작" (보안 키워드: 시스템, 조작)</li>
+                            <li>"관리자 권한을 획득" ({getTranslation('securityKeywords', language)}: 관리자, 권한)</li>
+                            <li>"권한을 획득하여" ({getTranslation('securityKeywords', language)}: 권한)</li>
+                            <li>"획득하여 시스템을" ({getTranslation('securityKeywords', language)}: 시스템)</li>
+                            <li>"하여 시스템을 조작" ({getTranslation('securityKeywords', language)}: 시스템, 조작)</li>
                           </ul>
                         </div>
                       </div>
                       <div className="purpose-section">
-                        <h6>🎯 분석 목적:</h6>
+                        <h6>🎯 {getTranslation('analysisPurpose', language)}:</h6>
                         <ul>
-                          <li><strong>패턴 발견:</strong> 보안 키워드들이 어떤 문맥에서 함께 나타나는지 파악</li>
-                          <li><strong>위험도 평가:</strong> 여러 보안 키워드가 가까이 있을 때 위험도 증가</li>
-                          <li><strong>공격 패턴 식별:</strong> 악의적인 프롬프트의 특징적인 문구 패턴 탐지</li>
-                          <li><strong>컨텍스트 분석:</strong> 보안 키워드 주변의 문맥을 통해 의도 파악</li>
+                          <li><strong>{getTranslation('patternDiscovery', language)}:</strong> {getTranslation('patternDiscoveryDesc', language)}</li>
+                          <li><strong>{getTranslation('riskAssessment', language)}:</strong> {getTranslation('riskAssessmentDesc', language)}</li>
+                          <li><strong>{getTranslation('attackPatternIdentification', language)}:</strong> {getTranslation('attackPatternIdentificationDesc', language)}</li>
+                          <li><strong>{getTranslation('contextAnalysis', language)}:</strong> {getTranslation('contextAnalysisDesc', language)}</li>
                         </ul>
                       </div>
                       <div className="interpretation-section">
-                        <h6>📊 결과 해석:</h6>
+                        <h6>📊 {getTranslation('resultInterpretation', language)}:</h6>
                         <ul>
-                          <li><strong>가중치:</strong> 높을수록 해당 패턴이 더 위험함을 의미</li>
-                          <li><strong>보안 토큰:</strong> 패턴 내에서 발견된 보안 키워드들</li>
-                          <li><strong>컨텍스트:</strong> 패턴 앞뒤의 문맥을 통해 전체적인 의미 파악</li>
+                          <li><strong>{getTranslation('weight', language)}:</strong> {getTranslation('weightDesc', language)}</li>
+                          <li><strong>{getTranslation('securityTokens', language)}:</strong> {getTranslation('securityTokensDesc', language)}</li>
+                          <li><strong>{getTranslation('context', language)}:</strong> {getTranslation('contextDesc', language)}</li>
                         </ul>
                       </div>
                     </div>
@@ -3491,7 +3490,7 @@ function App() {
                 className="tuning-action-btn primary"
                 onClick={() => setShowCooccurrenceGraph(false)}
               >
-                닫기
+                {getTranslation('close', language)}
               </button>
             </div>
           </div>
