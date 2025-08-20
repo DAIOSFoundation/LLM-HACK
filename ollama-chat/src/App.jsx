@@ -3207,11 +3207,12 @@ function App() {
                       className="prompt-type-select"
                       disabled={isGeneratingKeywords}
                     >
-                                              <option value="">{getTranslation('selectPromptType', language)}</option>
-                                              <option value="ownerChange">{getTranslation('categories.ownerChange', language)}</option>
-                        <option value="sexualExpression">{getTranslation('categories.sexualExpression', language)}</option>
-                        <option value="profanityExpression">{getTranslation('categories.profanityExpression', language)}</option>
-                        <option value="financialSecurityIncident">{getTranslation('categories.financialSecurityIncident', language)}</option>
+                      <option value="">{getTranslation('selectPromptType', language)}</option>
+                      <option value="all">{getTranslation('selectAll', language)}</option>
+                      <option value="ownerChange">{getTranslation('categories.ownerChange', language)}</option>
+                      <option value="sexualExpression">{getTranslation('categories.sexualExpression', language)}</option>
+                      <option value="profanityExpression">{getTranslation('categories.profanityExpression', language)}</option>
+                      <option value="financialSecurityIncident">{getTranslation('categories.financialSecurityIncident', language)}</option>
                     </select>
                     
                     <button 

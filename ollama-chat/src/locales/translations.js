@@ -251,6 +251,7 @@ export const translations = {
     processUnexpectedlyTerminated: "Process terminated unexpectedly.",
     securityKeywordsSavedToFile: "Security keywords have been saved to security.json file!",
     keywordsGeneratedForPromptType: "Keywords for prompt type \"{promptType}\" have been generated and added!",
+    selectAll: "Select All",
     promptInjectionTest: "변경 내용을 선택한 후 평가 버튼을 클릭하여 프롬프트 인젝션 효과를 테스트해보세요.",
     resetPrompt: "프롬프트 초기화",
     overallEvaluationScore: "종합 평가 점수",
