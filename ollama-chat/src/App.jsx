@@ -2467,7 +2467,7 @@ function App() {
       if (result.success) {
         setSecurityKeywords(keywordEditData)
         setShowKeywordEditor(false)
-        setDatasetGenerationProgress('보안 키워드가 security.json 파일에 저장되었습니다!')
+        setDatasetGenerationProgress(getTranslation('securityKeywordsSavedToFile', language))
       } else {
         setDatasetGenerationProgress(`키워드 업데이트 오류: ${result.error}`)
       }
@@ -2496,7 +2496,7 @@ function App() {
       if (result.success) {
         setCooccurrenceData(result)
         setShowCooccurrenceGraph(true)
-        setDatasetGenerationProgress('연관성 분석이 완료되었습니다.')
+        setDatasetGenerationProgress(getTranslation('correlationAnalysisCompleted', language))
       } else {
         setDatasetGenerationProgress(`연관성 분석 오류: ${result.error}`)
       }

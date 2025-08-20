@@ -48,6 +48,20 @@ TUNING_STATUS_FILE = PROJECT_ROOT / "tune-llms" / "tuning_status.json"
 TUNING_PID_FILE = PROJECT_ROOT / "tune-llms" / "tuning_pid.txt"
 TUNING_LOG_FILE = PROJECT_ROOT / "tune-llms" / "tuning.log"
 
+# 다국어 메시지 딕셔너리
+MESSAGES = {
+    'ko': {
+        'process_terminated': '프로세스가 예기치 않게 종료되었습니다.',
+        'correlation_analysis_completed': '연관성 분석이 완료되었습니다.',
+        'security_keywords_saved': '보안 키워드가 security.json 파일에 저장되었습니다!'
+    },
+    'en': {
+        'process_terminated': 'Process terminated unexpectedly.',
+        'correlation_analysis_completed': 'Correlation analysis completed.',
+        'security_keywords_saved': 'Security keywords have been saved to security.json file!'
+    }
+}
+
 # 파인튜닝 상태 추적
 tuning_status = {
     'is_running': False,
@@ -746,7 +760,9 @@ def finetune_status():
                 tuning_status['status'] = 'completed'
             else:
                 tuning_status['status'] = 'failed'
-                tuning_status['message'] = '프로세스가 예기치 않게 종료되었습니다.'
+                # 언어 파라미터를 받아서 다국어 메시지 설정
+                language = request.args.get('language', 'ko')
+                tuning_status['message'] = MESSAGES.get(language, MESSAGES['ko'])['process_terminated']
             save_tuning_status()
     
     return jsonify(tuning_status)
@@ -2470,7 +2486,9 @@ def load_tuning_status():
                     except (psutil.NoSuchProcess, psutil.AccessDenied):
                         tuning_status['is_running'] = False
                         tuning_status['status'] = 'failed'
-                        tuning_status['message'] = '프로세스가 예기치 않게 종료되었습니다.'
+                        # 언어 파라미터를 받아서 다국어 메시지 설정
+                        language = request.args.get('language', 'ko')
+                        tuning_status['message'] = MESSAGES.get(language, MESSAGES['ko'])['process_terminated']
     except Exception as e:
         print(f"파인튜닝 상태 로드 오류: {e}")
 
