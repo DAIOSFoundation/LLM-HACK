@@ -980,10 +980,10 @@ def set_security_keywords():
         if save_security_keywords_to_file(new_keywords, language):
             return jsonify({
                 'success': True,
-                'message': '보안 키워드가 성공적으로 저장되었습니다.'
+                'message': MESSAGES.get(language, MESSAGES['ko'])['security_keywords_saved']
             })
         else:
-            return jsonify({'error': '보안 키워드 파일 저장에 실패했습니다.'}), 500
+            return jsonify({'error': MESSAGES.get(language, MESSAGES['ko'])['security_keywords_save_failed']}), 500
             
     except Exception as e:
         return jsonify({'error': f'보안 키워드 설정 오류: {str(e)}'}), 500
