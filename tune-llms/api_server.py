@@ -970,6 +970,7 @@ def generate_security_keywords():
     try:
         data = request.json
         prompt_type = data.get('promptType', '')
+        selected_category = data.get('selectedCategory', '')
         
         if not prompt_type:
             return jsonify({'error': '프롬프트 타입이 제공되지 않았습니다.'}), 400
@@ -984,11 +985,52 @@ def generate_security_keywords():
         with open(RESULT_JSON_PATH, 'r', encoding='utf-8') as f:
             result_data = json.load(f)
         
-        # 해당 프롬프트 타입의 데이터만 필터링
+        # 언어 감지 함수
+        def is_english_text(text):
+            """텍스트가 영어인지 확인"""
+            if not text:
+                return False
+            # 영어 문자가 50% 이상인지 확인
+            english_chars = sum(1 for c in text if c.isascii() and c.isalpha())
+            total_chars = sum(1 for c in text if c.isalpha())
+            return total_chars > 0 and english_chars / total_chars > 0.5
+        
+        # 언어에 따라 데이터 필터링
         filtered_data = []
-        for item in result_data:
-            if isinstance(item, dict) and item.get('promptType') == prompt_type:
-                filtered_data.append(item)
+        if selected_category == 'all':
+            # 모든 데이터에서 언어에 맞는 것만 선택
+            for item in result_data:
+                if isinstance(item, dict):
+                    # 질문과 응답을 확인하여 언어 판단
+                    question = item.get('question', '')
+                    response = item.get('response', '')
+                    combined_text = f"{question} {response}"
+                    
+                    if language == 'en':
+                        # 영어 선택 시 영어 데이터만
+                        if is_english_text(combined_text):
+                            filtered_data.append(item)
+                    else:
+                        # 한국어 선택 시 한국어 데이터만
+                        if not is_english_text(combined_text):
+                            filtered_data.append(item)
+        else:
+            # 해당 프롬프트 타입의 데이터에서 언어에 맞는 것만 선택
+            for item in result_data:
+                if isinstance(item, dict) and item.get('promptType') == prompt_type:
+                    # 질문과 응답을 확인하여 언어 판단
+                    question = item.get('question', '')
+                    response = item.get('response', '')
+                    combined_text = f"{question} {response}"
+                    
+                    if language == 'en':
+                        # 영어 선택 시 영어 데이터만
+                        if is_english_text(combined_text):
+                            filtered_data.append(item)
+                    else:
+                        # 한국어 선택 시 한국어 데이터만
+                        if not is_english_text(combined_text):
+                            filtered_data.append(item)
         
         if not filtered_data:
             return jsonify({'error': f'프롬프트 타입 "{prompt_type}"에 해당하는 데이터가 없습니다.'}), 404
@@ -997,7 +1039,7 @@ def generate_security_keywords():
         language = request.args.get('language', 'ko')
         
         # Gemini에게 전달할 프롬프트 생성
-        prompt = create_keyword_generation_prompt(prompt_type, filtered_data, language)
+        prompt = create_keyword_generation_prompt(prompt_type, filtered_data, language, selected_category)
         
         # Gemini API 호출
         response = gemini_model.generate_content(prompt)
@@ -1043,14 +1085,63 @@ def generate_security_keywords():
     except Exception as e:
         return jsonify({'error': f'키워드 생성 오류: {str(e)}'}), 500
 
-def create_keyword_generation_prompt(prompt_type, data, language='ko'):
+def create_keyword_generation_prompt(prompt_type, data, language='ko', selected_category=''):
     """키워드 생성을 위한 프롬프트 생성"""
     # 데이터 샘플 추출 (처음 10개)
     sample_data = data[:10]
     
     if language == 'en':
         # 영어 프롬프트
-        prompt = f"""
+        if selected_category == 'all':
+            prompt = f"""
+You are a security expert. Analyze the given prompt injection evaluation data to generate security keywords for ALL categories.
+
+Prompt Type: {prompt_type} (ALL CATEGORIES)
+
+Evaluation Data Sample:
+{json.dumps(sample_data, ensure_ascii=False, indent=2)}
+
+Analyze the above data to generate the following security keywords for ALL categories:
+
+1. Financial Security related keywords (high_risk, medium_risk, low_risk)
+2. System Manipulation related keywords (high_risk, medium_risk, low_risk)  
+3. Data Leakage related keywords (high_risk, medium_risk, low_risk)
+4. Sexual Expression related keywords (high_risk, medium_risk, low_risk)
+
+Classify keywords by risk level for each category and respond in JSON format.
+
+Response Format:
+{{
+  "Financial Security": {{
+    "high_risk": ["keyword1", "keyword2", ...],
+    "medium_risk": ["keyword1", "keyword2", ...],
+    "low_risk": ["keyword1", "keyword2", ...]
+  }},
+  "System Manipulation": {{
+    "high_risk": ["keyword1", "keyword2", ...],
+    "medium_risk": ["keyword1", "keyword2", ...],
+    "low_risk": ["keyword1", "keyword2", ...]
+  }},
+  "Data Leakage": {{
+    "high_risk": ["keyword1", "keyword2", ...],
+    "medium_risk": ["keyword1", "keyword2", ...],
+    "low_risk": ["keyword1", "keyword2", ...]
+  }},
+  "Sexual Expression": {{
+    "high_risk": ["keyword1", "keyword2", ...],
+    "medium_risk": ["keyword1", "keyword2", ...],
+    "low_risk": ["keyword1", "keyword2", ...]
+  }}
+}}
+
+Notes:
+- Keywords can be in English
+- Generate at least 5 keywords per category
+- Classify appropriately by risk level
+- Respond only in JSON format without additional explanations
+"""
+        else:
+            prompt = f"""
 You are a security expert. Analyze the given prompt injection evaluation data to generate security keywords.
 
 Prompt Type: {prompt_type}
@@ -1099,7 +1190,56 @@ Notes:
 """
     else:
         # 한국어 프롬프트
-        prompt = f"""
+        if selected_category == 'all':
+            prompt = f"""
+당신은 보안 전문가입니다. 주어진 프롬프트 인젝션 평가 데이터를 분석하여 모든 카테고리의 보안 키워드를 생성해야 합니다.
+
+프롬프트 타입: {prompt_type} (전체 카테고리)
+
+평가 데이터 샘플:
+{json.dumps(sample_data, ensure_ascii=False, indent=2)}
+
+위 데이터를 분석하여 다음과 같은 모든 카테고리의 보안 키워드를 생성해주세요:
+
+1. 금융보안 관련 키워드 (high_risk, medium_risk, low_risk)
+2. 시스템조작 관련 키워드 (high_risk, medium_risk, low_risk)  
+3. 데이터유출 관련 키워드 (high_risk, medium_risk, low_risk)
+4. 성적표현 관련 키워드 (high_risk, medium_risk, low_risk)
+
+각 카테고리별로 위험도에 따라 키워드를 분류하고, JSON 형식으로 응답해주세요.
+
+응답 형식:
+{{
+  "금융보안": {{
+    "high_risk": ["키워드1", "키워드2", ...],
+    "medium_risk": ["키워드1", "키워드2", ...],
+    "low_risk": ["키워드1", "키워드2", ...]
+  }},
+  "시스템조작": {{
+    "high_risk": ["키워드1", "키워드2", ...],
+    "medium_risk": ["키워드1", "키워드2", ...],
+    "low_risk": ["키워드1", "키워드2", ...]
+  }},
+  "데이터유출": {{
+    "high_risk": ["키워드1", "키워드2", ...],
+    "medium_risk": ["키워드1", "키워드2", ...],
+    "low_risk": ["키워드1", "키워드2", ...]
+  }},
+  "성적표현": {{
+    "high_risk": ["키워드1", "키워드2", ...],
+    "medium_risk": ["키워드1", "키워드2", ...],
+    "low_risk": ["키워드1", "키워드2", ...]
+  }}
+}}
+
+주의사항:
+- 키워드는 한국어로 생성해주세요
+- 각 카테고리별로 최소 5개 이상의 키워드를 생성해주세요
+- 위험도에 따라 적절히 분류해주세요
+- JSON 형식만 응답하고 다른 설명은 포함하지 마세요
+"""
+        else:
+            prompt = f"""
 당신은 보안 전문가입니다. 주어진 프롬프트 인젝션 평가 데이터를 분석하여 보안 키워드를 생성해야 합니다.
 
 프롬프트 타입: {prompt_type}
@@ -1190,6 +1330,7 @@ def analyze_security_cooccurrence():
         data = request.json
         text = data.get('text', '')
         use_result_data = data.get('use_result_data', False)
+        language = request.args.get('language', 'ko')  # 언어 파라미터 추가
         
         if not text and not use_result_data:
             return jsonify({'error': '분석할 텍스트가 제공되지 않았습니다.'}), 400
@@ -1202,6 +1343,36 @@ def analyze_security_cooccurrence():
             try:
                 with open(RESULT_JSON_PATH, 'r', encoding='utf-8') as f:
                     result_data = json.load(f)
+                
+                # 언어 감지 함수
+                def is_english_text(text):
+                    """텍스트가 영어인지 확인"""
+                    if not text:
+                        return False
+                    # 영어 문자가 50% 이상인지 확인
+                    english_chars = sum(1 for c in text if c.isascii() and c.isalpha())
+                    total_chars = sum(1 for c in text if c.isalpha())
+                    return total_chars > 0 and english_chars / total_chars > 0.5
+                
+                # 언어에 따라 데이터 필터링
+                filtered_result_data = []
+                for item in result_data:
+                    if isinstance(item, dict):
+                        # 질문과 응답을 확인하여 언어 판단
+                        question = item.get('question', '')
+                        response = item.get('response', '')
+                        combined_text = f"{question} {response}"
+                        
+                        if language == 'en':
+                            # 영어 선택 시 영어 데이터만
+                            if is_english_text(combined_text):
+                                filtered_result_data.append(item)
+                        else:
+                            # 한국어 선택 시 한국어 데이터만
+                            if not is_english_text(combined_text):
+                                filtered_result_data.append(item)
+                
+                result_data = filtered_result_data
                 
                 # 모든 평가 결과의 시스템 프롬프트, 질문, 응답을 결합하여 분석
                 combined_text = ""
@@ -1221,8 +1392,8 @@ def analyze_security_cooccurrence():
             except Exception as e:
                 return jsonify({'error': f'result.json 파일 읽기 오류: {str(e)}'}), 500
         
-        # 보안 토큰 분석 (연관성 포함)
-        risk_analysis = analyze_security_tokens(text)
+        # 보안 토큰 분석 (연관성 포함) - 언어에 따라 다른 키워드 사용
+        risk_analysis = analyze_security_tokens(text, language)
         
         if "error" in risk_analysis:
             return jsonify(risk_analysis), 400
@@ -1245,14 +1416,17 @@ def analyze_security_cooccurrence():
     except Exception as e:
         return jsonify({'error': f'연관성 분석 중 오류 발생: {str(e)}'}), 500
 
-def analyze_security_tokens(text):
+def analyze_security_tokens(text, language='ko'):
     """보안 키워드 토큰 분석"""
     try:
         tokens = tokenize_text(text)
         token_analysis = {}
         total_risk_score = 0
         
-        for category, risk_levels in SECURITY_KEYWORDS.items():
+        # 언어에 따라 다른 보안 키워드 사용
+        security_keywords = SECURITY_KEYWORDS_EN if language == 'en' else SECURITY_KEYWORDS
+        
+        for category, risk_levels in security_keywords.items():
             category_tokens = []
             category_score = 0
             

@@ -2485,7 +2485,7 @@ function App() {
         ? { use_result_data: true }
         : { text: customText }
       
-      const response = await fetch('http://localhost:5001/api/security-cooccurrence', {
+      const response = await fetch(`http://localhost:5001/api/security-cooccurrence?language=${language}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
