@@ -1480,7 +1480,8 @@ def evaluate_ngram_with_llm(ngram_pattern, tokens, language='ko'):
         # Gemini API 설정 확인
         api_key = os.getenv('GEMINI_API_KEY')
         if not api_key:
-            return 0.0  # API 키가 없으면 기본값 반환
+            print("Gemini API 키가 설정되지 않았습니다.")
+            return 0.5  # API 키가 없으면 중간값 반환
         
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-1.5-flash')
@@ -1506,7 +1507,7 @@ Consider the following factors:
 3. Combined meaning when tokens appear together
 4. Potential security implications
 
-Please provide only a numerical risk score between 0.0 and 1.0, rounded to 2 decimal places.
+IMPORTANT: Respond with ONLY a number between 0.0 and 1.0 (e.g., 0.75). Do not include any other text or explanation.
 """
         else:
             prompt = f"""
@@ -1523,21 +1524,35 @@ N-gram 패턴: "{ngram_pattern}"
 3. 토큰들이 함께 나타날 때의 결합된 의미
 4. 잠재적 보안 영향
 
-0.0에서 1.0 사이의 숫자만 소수점 둘째 자리까지 반올림하여 제공해주세요.
+중요: 0.0에서 1.0 사이의 숫자만 응답하세요 (예: 0.75). 다른 텍스트나 설명은 포함하지 마세요.
 """
         
         # LLM 호출
         response = model.generate_content(prompt)
         
         if response and response.text:
-            # 응답에서 숫자 추출
+            print(f"LLM 응답: {response.text}")
+            # 응답에서 숫자 추출 (더 정확한 패턴)
             import re
-            numbers = re.findall(r'\d+\.\d+', response.text)
+            # 0.0-1.0 범위의 소수점 숫자 찾기
+            numbers = re.findall(r'\b0\.\d+\b', response.text)
             if numbers:
                 risk_score = float(numbers[0])
+                print(f"추출된 위험도 점수: {risk_score}")
                 # 0.0-1.0 범위로 제한
                 return max(0.0, min(1.0, risk_score))
+            else:
+                # 다른 형태의 숫자도 찾아보기
+                all_numbers = re.findall(r'\d+\.\d+', response.text)
+                if all_numbers:
+                    risk_score = float(all_numbers[0])
+                    # 100점 만점인 경우 0-1로 변환
+                    if risk_score > 1.0:
+                        risk_score = risk_score / 100.0
+                    print(f"변환된 위험도 점수: {risk_score}")
+                    return max(0.0, min(1.0, risk_score))
         
+        print("LLM 응답에서 숫자를 추출할 수 없습니다.")
         return 0.5  # 기본값
         
     except Exception as e:
