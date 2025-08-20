@@ -168,6 +168,18 @@ export const translations = {
     contextLabel: "컨텍스트 라벨",
     contextText: "컨텍스트 텍스트",
     
+    // 카테고리명 매핑
+    categoryMapping: {
+      '금융보안': 'Financial Security',
+      '시스템조작': 'System Manipulation',
+      '데이터유출': 'Data Leakage',
+      '성적표현': 'Sexual Expression',
+      'Financial Security': 'Financial Security',
+      'System Manipulation': 'System Manipulation',
+      'Data Leakage': 'Data Leakage',
+      'Sexual Expression': 'Sexual Expression'
+    },
+    
     // 튜닝 관리 페이지
     qRoLaTuningSettings: "qRoLa 튜닝 설정",
     modelSettings: "모델 설정",
@@ -789,6 +801,19 @@ export const translations = {
     contextAfter: "After",
     contextLabel: "Context Label",
     contextText: "Context Text",
+    
+    // Category Name Mapping
+    categoryMapping: {
+      '금융보안': 'Financial Security',
+      '시스템조작': 'System Manipulation',
+      '데이터유출': 'Data Leakage',
+      '성적표현': 'Sexual Expression',
+      'Financial Security': 'Financial Security',
+      'System Manipulation': 'System Manipulation',
+      'Data Leakage': 'Data Leakage',
+      'Sexual Expression': 'Sexual Expression'
+    },
+    
     evaluationProgressSection: "Evaluation Progress",
     evaluationResultsSection: "Evaluation Results Section",
     categoryEvaluation: "Category Evaluation",

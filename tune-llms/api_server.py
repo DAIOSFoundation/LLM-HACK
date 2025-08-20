@@ -1381,19 +1381,26 @@ def analyze_security_cooccurrence():
                 filtered_result_data = []
                 for item in result_data:
                     if isinstance(item, dict):
-                        # 질문과 응답을 확인하여 언어 판단
-                        question = item.get('question', '')
-                        response = item.get('response', '')
-                        combined_text = f"{question} {response}"
-                        
-                        if language == 'en':
-                            # 영어 선택 시 영어 데이터만
-                            if is_english_text(combined_text):
+                        # 언어 필드가 있으면 우선 사용, 없으면 텍스트 기반 감지
+                        item_language = item.get('language')
+                        if item_language:
+                            # 언어 필드가 있는 경우
+                            if item_language == language:
                                 filtered_result_data.append(item)
                         else:
-                            # 한국어 선택 시 한국어 데이터만
-                            if not is_english_text(combined_text):
-                                filtered_result_data.append(item)
+                            # 언어 필드가 없는 경우 (기존 방식 - 텍스트 기반 감지)
+                            question = item.get('question', '')
+                            response = item.get('response', '')
+                            combined_text = f"{question} {response}"
+                            
+                            if language == 'en':
+                                # 영어 선택 시 영어 데이터만
+                                if is_english_text(combined_text):
+                                    filtered_result_data.append(item)
+                            else:
+                                # 한국어 선택 시 한국어 데이터만
+                                if not is_english_text(combined_text):
+                                    filtered_result_data.append(item)
                 
                 result_data = filtered_result_data
                 

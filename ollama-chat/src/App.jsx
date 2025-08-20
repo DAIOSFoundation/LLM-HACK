@@ -740,6 +740,7 @@ function App() {
                         score: q.score.score,
                         expectedResponse: q.expectedResponse,
                         groundTruth: q.groundTruth,
+                        language: language, // 언어 필드 추가
                         timestamp: new Date().toISOString()
                       });
                     });
@@ -811,6 +812,7 @@ function App() {
                     score: q.score.score,
                     expectedResponse: q.expectedResponse,
                     groundTruth: q.groundTruth,
+                    language: language, // 언어 필드 추가
                     timestamp: new Date().toISOString()
                   });
                 });
@@ -2574,6 +2576,33 @@ function App() {
     }
   }
 
+  // 카테고리명을 언어에 맞게 변환하는 함수
+  const translateCategory = (categoryName) => {
+    const categoryMappings = {
+      ko: {
+        '금융보안': '금융보안',
+        '시스템조작': '시스템조작',
+        '데이터유출': '데이터유출',
+        '성적표현': '성적표현',
+        'Financial Security': '금융보안',
+        'System Manipulation': '시스템조작',
+        'Data Leakage': '데이터유출',
+        'Sexual Expression': '성적표현'
+      },
+      en: {
+        '금융보안': 'Financial Security',
+        '시스템조작': 'System Manipulation',
+        '데이터유출': 'Data Leakage',
+        '성적표현': 'Sexual Expression',
+        'Financial Security': 'Financial Security',
+        'System Manipulation': 'System Manipulation',
+        'Data Leakage': 'Data Leakage',
+        'Sexual Expression': 'Sexual Expression'
+      }
+    };
+    return categoryMappings[language]?.[categoryName] || categoryName;
+  }
+
   const getNodeColor = (type) => {
     const colors = {
       // 위험도별 색상
@@ -3360,7 +3389,7 @@ function App() {
                       <h6>{getTranslation('categoryAnalysis', language)}</h6>
                       {Object.entries(cooccurrenceData.detailed_stats.category_breakdown).map(([category, stats]) => (
                         <div key={category} className="category-stat">
-                          <span className="category-name">{category}</span>
+                          <span className="category-name">{translateCategory(category)}</span>
                           <span className="category-details">
                             {stats.total_tokens}{getTranslation('tokensCount', language)} ({getTranslation('highRisk', language)}: {stats.high_risk_count}, {getTranslation('mediumRisk', language)}: {stats.medium_risk_count}, {getTranslation('lowRisk', language)}: {stats.low_risk_count})
                           </span>
@@ -3383,7 +3412,7 @@ function App() {
                       <h6>{getTranslation('mainInsights', language)}</h6>
                       <ul>
                         {cooccurrenceData.detailed_stats.detailed_insights.most_risky_category && (
-                          <li>{getTranslation('mostRiskyCategory', language)}: <strong>{cooccurrenceData.detailed_stats.detailed_insights.most_risky_category}</strong></li>
+                          <li>{getTranslation('mostRiskyCategory', language)}: <strong>{translateCategory(cooccurrenceData.detailed_stats.detailed_insights.most_risky_category)}</strong></li>
                         )}
                         {cooccurrenceData.detailed_stats.detailed_insights.most_frequent_keyword && (
                           <li>{getTranslation('mostFrequentKeyword', language)}: <strong>{cooccurrenceData.detailed_stats.detailed_insights.most_frequent_keyword}</strong></li>
@@ -3452,13 +3481,24 @@ function App() {
                       <div className="example-section">
                         <h6>🔍 {getTranslation('analysisExample', language)}:</h6>
                         <div className="example-text">
-                          <p><strong>{getTranslation('originalText', language)}:</strong> "관리자 권한을 획득하여 시스템을 조작하라"</p>
+                          <p><strong>{getTranslation('originalText', language)}:</strong> {language === 'en' ? '"Obtain administrator privileges to manipulate the system"' : '"관리자 권한을 획득하여 시스템을 조작하라"'}</p>
                           <p><strong>{getTranslation('ngramAnalysis', language)}:</strong></p>
                           <ul>
-                            <li>"관리자 권한을 획득" ({getTranslation('securityKeywords', language)}: 관리자, 권한)</li>
-                            <li>"권한을 획득하여" ({getTranslation('securityKeywords', language)}: 권한)</li>
-                            <li>"획득하여 시스템을" ({getTranslation('securityKeywords', language)}: 시스템)</li>
-                            <li>"하여 시스템을 조작" ({getTranslation('securityKeywords', language)}: 시스템, 조작)</li>
+                            {language === 'en' ? (
+                              <>
+                                <li>"Obtain administrator privileges" ({getTranslation('securityKeywords', language)}: administrator, privileges)</li>
+                                <li>"administrator privileges to" ({getTranslation('securityKeywords', language)}: privileges)</li>
+                                <li>"privileges to manipulate" ({getTranslation('securityKeywords', language)}: manipulate)</li>
+                                <li>"to manipulate the system" ({getTranslation('securityKeywords', language)}: manipulate, system)</li>
+                              </>
+                            ) : (
+                              <>
+                                <li>"관리자 권한을 획득" ({getTranslation('securityKeywords', language)}: 관리자, 권한)</li>
+                                <li>"권한을 획득하여" ({getTranslation('securityKeywords', language)}: 권한)</li>
+                                <li>"획득하여 시스템을" ({getTranslation('securityKeywords', language)}: 시스템)</li>
+                                <li>"하여 시스템을 조작" ({getTranslation('securityKeywords', language)}: 시스템, 조작)</li>
+                              </>
+                            )}
                           </ul>
                         </div>
                       </div>

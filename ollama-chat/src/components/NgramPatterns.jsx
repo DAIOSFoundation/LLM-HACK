@@ -30,6 +30,33 @@ const NgramPatterns = ({ patterns, language = 'ko' }) => {
     return translations[lang]?.[key] || key;
   };
 
+  // 카테고리명을 언어에 맞게 변환하는 함수
+  const translateCategory = (categoryName) => {
+    const categoryMappings = {
+      ko: {
+        '금융보안': '금융보안',
+        '시스템조작': '시스템조작',
+        '데이터유출': '데이터유출',
+        '성적표현': '성적표현',
+        'Financial Security': '금융보안',
+        'System Manipulation': '시스템조작',
+        'Data Leakage': '데이터유출',
+        'Sexual Expression': '성적표현'
+      },
+      en: {
+        '금융보안': 'Financial Security',
+        '시스템조작': 'System Manipulation',
+        '데이터유출': 'Data Leakage',
+        '성적표현': 'Sexual Expression',
+        'Financial Security': 'Financial Security',
+        'System Manipulation': 'System Manipulation',
+        'Data Leakage': 'Data Leakage',
+        'Sexual Expression': 'Sexual Expression'
+      }
+    };
+    return categoryMappings[language]?.[categoryName] || categoryName;
+  };
+
   if (!patterns || patterns.length === 0) {
     return (
       <div className="ngram-patterns">
@@ -90,7 +117,7 @@ const NgramPatterns = ({ patterns, language = 'ko' }) => {
                     }}
                   >
                     <span className="token-text">{tokenInfo.token_text}</span>
-                    <span className="token-category">{tokenInfo.category}</span>
+                    <span className="token-category">{translateCategory(tokenInfo.category)}</span>
                     <span className="token-risk">{tokenInfo.risk_level}</span>
                   </span>
                 ))}
