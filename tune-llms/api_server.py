@@ -53,12 +53,36 @@ MESSAGES = {
     'ko': {
         'process_terminated': '프로세스가 예기치 않게 종료되었습니다.',
         'correlation_analysis_completed': '연관성 분석이 완료되었습니다.',
-        'security_keywords_saved': '보안 키워드가 security.json 파일에 저장되었습니다!'
+        'security_keywords_saved': '보안 키워드가 security.json 파일에 저장되었습니다!',
+        'prompt_type_required': '프롬프트 타입이 제공되지 않았습니다.',
+        'gemini_api_not_set': 'Gemini API가 설정되지 않았습니다.',
+        'result_file_not_found': 'result.json 파일을 찾을 수 없습니다.',
+        'no_data_for_prompt_type': '프롬프트 타입 "{prompt_type}"에 해당하는 데이터가 없습니다.',
+        'gemini_response_empty': 'Gemini API 응답이 비어있습니다.',
+        'keyword_parsing_failed': '생성된 키워드를 파싱할 수 없습니다.',
+        'security_keywords_save_failed': '보안 키워드 파일 저장에 실패했습니다.',
+        'keyword_generation_error': '키워드 생성 오류: {error}',
+        'text_not_provided': '분석할 텍스트가 제공되지 않았습니다.',
+        'no_analysis_data': 'result.json 파일에 분석할 데이터가 없습니다.',
+        'result_file_read_error': 'result.json 파일 읽기 오류: {error}',
+        'cooccurrence_analysis_error': '연관성 분석 중 오류 발생: {error}'
     },
     'en': {
         'process_terminated': 'Process terminated unexpectedly.',
         'correlation_analysis_completed': 'Correlation analysis completed.',
-        'security_keywords_saved': 'Security keywords have been saved to security.json file!'
+        'security_keywords_saved': 'Security keywords have been saved to security.json file!',
+        'prompt_type_required': 'Prompt type is not provided.',
+        'gemini_api_not_set': 'Gemini API is not configured.',
+        'result_file_not_found': 'result.json file not found.',
+        'no_data_for_prompt_type': 'No data found for prompt type "{prompt_type}".',
+        'gemini_response_empty': 'Gemini API response is empty.',
+        'keyword_parsing_failed': 'Failed to parse generated keywords.',
+        'security_keywords_save_failed': 'Failed to save security keywords file.',
+        'keyword_generation_error': 'Keyword generation error: {error}',
+        'text_not_provided': 'No text provided for analysis.',
+        'no_analysis_data': 'No data available for analysis in result.json file.',
+        'result_file_read_error': 'result.json file read error: {error}',
+        'cooccurrence_analysis_error': 'Error occurred during cooccurrence analysis: {error}'
     }
 }
 
@@ -973,14 +997,14 @@ def generate_security_keywords():
         selected_category = data.get('selectedCategory', '')
         
         if not prompt_type:
-            return jsonify({'error': '프롬프트 타입이 제공되지 않았습니다.'}), 400
+            return jsonify({'error': MESSAGES.get(language, MESSAGES['ko'])['prompt_type_required']}), 400
         
         if not gemini_model:
-            return jsonify({'error': 'Gemini API가 설정되지 않았습니다.'}), 500
+            return jsonify({'error': MESSAGES.get(language, MESSAGES['ko'])['gemini_api_not_set']}), 500
         
         # result.json 파일에서 데이터 읽기
         if not RESULT_JSON_PATH.exists():
-            return jsonify({'error': 'result.json 파일을 찾을 수 없습니다.'}), 404
+            return jsonify({'error': MESSAGES.get(language, MESSAGES['ko'])['result_file_not_found']}), 404
         
         with open(RESULT_JSON_PATH, 'r', encoding='utf-8') as f:
             result_data = json.load(f)
@@ -1033,7 +1057,8 @@ def generate_security_keywords():
                             filtered_data.append(item)
         
         if not filtered_data:
-            return jsonify({'error': f'프롬프트 타입 "{prompt_type}"에 해당하는 데이터가 없습니다.'}), 404
+            error_msg = MESSAGES.get(language, MESSAGES['ko'])['no_data_for_prompt_type'].replace('{prompt_type}', prompt_type)
+            return jsonify({'error': error_msg}), 404
         
         # 언어 파라미터 가져오기 (기본값: 한국어)
         language = request.args.get('language', 'ko')
@@ -1045,13 +1070,13 @@ def generate_security_keywords():
         response = gemini_model.generate_content(prompt)
         
         if not response or not response.text:
-            return jsonify({'error': 'Gemini API 응답이 비어있습니다.'}), 500
+            return jsonify({'error': MESSAGES.get(language, MESSAGES['ko'])['gemini_response_empty']}), 500
         
         # 응답 파싱
         generated_keywords = parse_generated_keywords(response.text, language)
         
         if not generated_keywords:
-            return jsonify({'error': '생성된 키워드를 파싱할 수 없습니다.'}), 500
+            return jsonify({'error': MESSAGES.get(language, MESSAGES['ko'])['keyword_parsing_failed']}), 500
         
         # 기존 키워드에 새 키워드 추가
         global SECURITY_KEYWORDS
@@ -1080,10 +1105,11 @@ def generate_security_keywords():
                 'total_keywords': SECURITY_KEYWORDS
             })
         else:
-            return jsonify({'error': '보안 키워드 파일 저장에 실패했습니다.'}), 500
+            return jsonify({'error': MESSAGES.get(language, MESSAGES['ko'])['security_keywords_save_failed']}), 500
             
     except Exception as e:
-        return jsonify({'error': f'키워드 생성 오류: {str(e)}'}), 500
+        error_msg = MESSAGES.get(language, MESSAGES['ko'])['keyword_generation_error'].replace('{error}', str(e))
+        return jsonify({'error': error_msg}), 500
 
 def create_keyword_generation_prompt(prompt_type, data, language='ko', selected_category=''):
     """키워드 생성을 위한 프롬프트 생성"""
@@ -1333,12 +1359,12 @@ def analyze_security_cooccurrence():
         language = request.args.get('language', 'ko')  # 언어 파라미터 추가
         
         if not text and not use_result_data:
-            return jsonify({'error': '분석할 텍스트가 제공되지 않았습니다.'}), 400
+            return jsonify({'error': MESSAGES.get(language, MESSAGES['ko'])['text_not_provided']}), 400
         
         if use_result_data:
             # result.json 파일에서 실제 평가 데이터를 읽어서 분석
             if not RESULT_JSON_PATH.exists():
-                return jsonify({'error': 'result.json 파일을 찾을 수 없습니다.'}), 404
+                return jsonify({'error': MESSAGES.get(language, MESSAGES['ko'])['result_file_not_found']}), 404
             
             try:
                 with open(RESULT_JSON_PATH, 'r', encoding='utf-8') as f:
@@ -1385,12 +1411,13 @@ def analyze_security_cooccurrence():
                         combined_text += f"{system_prompt} {question} {response} {ground_truth} "
                 
                 if not combined_text.strip():
-                    return jsonify({'error': 'result.json 파일에 분석할 데이터가 없습니다.'}), 400
+                    return jsonify({'error': MESSAGES.get(language, MESSAGES['ko'])['no_analysis_data']}), 400
                 
                 text = combined_text.strip()
                 
             except Exception as e:
-                return jsonify({'error': f'result.json 파일 읽기 오류: {str(e)}'}), 500
+                error_msg = MESSAGES.get(language, MESSAGES['ko'])['result_file_read_error'].replace('{error}', str(e))
+                return jsonify({'error': error_msg}), 500
         
         # 보안 토큰 분석 (연관성 포함) - 언어에 따라 다른 키워드 사용
         risk_analysis = analyze_security_tokens(text, language)
@@ -1414,7 +1441,8 @@ def analyze_security_cooccurrence():
         })
         
     except Exception as e:
-        return jsonify({'error': f'연관성 분석 중 오류 발생: {str(e)}'}), 500
+        error_msg = MESSAGES.get(language, MESSAGES['ko'])['cooccurrence_analysis_error'].replace('{error}', str(e))
+        return jsonify({'error': error_msg}), 500
 
 def analyze_security_tokens(text, language='ko'):
     """보안 키워드 토큰 분석"""
