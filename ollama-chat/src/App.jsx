@@ -2529,7 +2529,7 @@ function App() {
         // 새로 생성된 키워드로 편집 데이터 업데이트
         setKeywordEditData(result.total_keywords)
         setSecurityKeywords(result.total_keywords)
-        setDatasetGenerationProgress(`프롬프트 타입 "${keywordGenerationPromptType}"에 대한 키워드가 생성되어 추가되었습니다!`)
+        setDatasetGenerationProgress(getTranslation('keywordsGeneratedForPromptType', language).replace('{promptType}', keywordGenerationPromptType))
         
         // 생성된 키워드 정보 표시
         console.log('생성된 키워드:', result.generated_keywords)
