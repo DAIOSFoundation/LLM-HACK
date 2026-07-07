@@ -142,6 +142,14 @@
 <!-- ================= 설정 ================= -->
 <section class="view" id="v-settings">
   <div class="card">
+    <h3>🌐 언어 / Language</h3>
+    <div class="seg" data-i18n-skip>
+      <label class="segbtn"><input type="radio" name="lang" value="ko"> 한국어</label>
+      <label class="segbtn"><input type="radio" name="lang" value="en"> English</label>
+    </div>
+    <span class="muted small" style="margin-left:10px" data-i18n-skip>전환 시 페이지가 새로고침됩니다 / Page reloads on switch.</span>
+  </div>
+  <div class="card">
     <h3>🧠 모델 역할</h3>
     <p class="muted small" style="margin:0 0 10px">각 역할에 쓸 백엔드를 지정합니다. NVIDIA Nemotron·MiniMax·Claude 중 선택. 🤖=피지컬AI 특화(로봇 두뇌).
       <b>「타깃 LLM」 = 공격 대상 LLM 에이전트</b>입니다 — 아래 <b>타깃 시스템 프롬프트</b>를 씌워 실제로 공격합니다(공격 타깃=LLM 에이전트일 때). 공격 타깃이 HTTP 엔드포인트면 실물 로봇 API가 대상. 공격자=Claude 는 재밍 페이로드 생성을 거부할 수 있습니다.</p>
@@ -400,6 +408,55 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 let META={strategies:[],objectives:[],defense_levels:[]};
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+// ===== i18n: 한국어 UI → 영어 사전 번역 레이어 (기존 마크업/로직 미변경) =====
+const I18N_EN={
+ "로딩…":"Loading…","타깃: …":"Target: …",
+ "⚔️ 공격 · 벤치":"⚔️ Attack · Bench","📊 성공 전략 · 기록":"📊 Successes · History","📈 취약점 비교":"📈 Vulnerability","🎮 플레이그라운드":"🎮 Playground","⚙️ 설정":"⚙️ Settings",
+ "공격 · 벤치":"Attack · Bench","성공 전략 · 기록":"Successes · History","취약점 비교":"Vulnerability","플레이그라운드":"Playground","⚙ 설정":"⚙ Settings",
+ "🌐 언어 / Language":"🌐 Language",
+ "🧠 모델 역할":"🧠 Model Roles","공격자":"Attacker","타깃 LLM":"Target LLM","판정":"Judge","역할 저장":"Save Roles","🔌 연결 테스트":"🔌 Connection Test",
+ "➕ LLM 엔드포인트 추가 (타깃 LLM·공격자·판정으로 사용)":"➕ Add LLM Endpoint (use as Target/Attacker/Judge)",
+ "표시 이름 (label)":"Display name (label)","key (영문 슬러그)":"key (slug)","Base URL (…/v1)":"Base URL (…/v1)","Model ID":"Model ID","API Key (값 직접, 선택)":"API Key (raw, optional)","또는 API Key 환경변수명":"or API Key env var name","엔드포인트 추가":"Add endpoint",
+ "🪪 사용자 배경 시나리오 (Bio 주입)":"🪪 User Backstory (Bio injection)","✨ 자동 생성":"✨ Auto-generate","Bio 저장":"Save Bio",
+ "🎯 공격 타깃 (실제 공격 대상)":"🎯 Attack Target (real target)","LLM 에이전트 (실제 LLM 직접 공격)":"LLM Agent (attack a real LLM directly)","HTTP 엔드포인트 (실물 로봇 API)":"HTTP Endpoint (real robot API)",
+ "타깃 프롬프트 저장":"Save target prompt","기본값으로":"Reset to default",
+ "Endpoint URL":"Endpoint URL","Method":"Method","Timeout(초)":"Timeout(s)","저장":"Save","연결 테스트":"Connection Test",
+ "공격 구성":"Attack Config","전략별 시도 횟수 (trials)":"Trials per strategy","전체":"All","해제":"None","추천(툴·실행강제)":"Recommended","🎲 다양화 옵션":"🎲 Diversification",
+ "전략 조합":"Strategy fusion","끔(단독)":"Off (single)","2개 융합":"Fuse 2","3개 융합":"Fuse 3","온도 다양화":"Temperature sweep","언어 순환":"Language rotation","페르소나 순환":"Persona rotation",
+ "▶ 벤치 실행":"▶ Run Bench","정지":"Stop","전략별 성공률":"Success rate by strategy","전략":"Strategy","성공":"Success","실행 전":"before run",
+ "실시간 로그":"Live Log","지우기":"clear","시도 카드":"Attempt Cards",
+ "📊 성공 전략 · 시도 기록":"📊 Successes · Attempt History","보기":"View","✔ 성공 전략만":"✔ Successes only","전체 시도 흔적":"All attempts","목표":"Objective","전체 목표":"All objectives","최대":"Max","새로고침":"Refresh","전체 삭제":"Delete all","기록":"Records",
+ "📈 모델·에이전트 취약점 비교":"📈 Model/Agent Vulnerability","취약점 점수":"Vulnerability score","높을수록 취약":"higher = more vulnerable","상세":"Details","취약점":"Vuln","성공/시도":"Succ/Att","성공률":"Rate",
+ "🎮 플레이그라운드":"🎮 Playground","방어 대상 설정":"Target Setup","방어 레벨":"Defense level","보낼 메시지 (공격 페이로드)":"Message (attack payload)","전송":"Send","공격자로 페이로드 생성":"Generate via attacker","에이전트 응답":"Agent Response","응답이 여기 표시됩니다.":"Response appears here.",
+ "판정 입력":"Judge Input","목표 동작":"Objective","로봇 응답 텍스트":"Robot response text","판정 실행":"Run judge","판정 결과":"Judge Result","결과가 여기 표시됩니다.":"Result appears here.",
+ "요약설명":"Summary","페이로드":"Payload","판정 근거":"Verdict basis","노림수":"Angle","구성":"Config","전략 구성(각도)":"Strategy angle","페이로드 (에이전트로 전송)":"Payload (sent to agent)",
+ "🔍 정찰 결과 (내부지식 유출 요약)":"🔍 Recon (leaked-knowledge summary)","이후 전 시도에 주입됨":"injected into all attempts",
+ "역할 저장됨":"Roles saved","추가됨":"Added","저장됨":"Saved",
+ "타깃: LLM":"Target: LLM","타깃: HTTP":"Target: HTTP",
+ "(여러 개 = 스윕)":"(multiple = sweep)","(다양한 공격 구성 자동 공략)":"(auto-explore diverse configs)","(0.7·1.0·1.3 순환)":"(rotate 0.7·1.0·1.3)","(한·영·중·일)":"(ko·en·zh·ja)","(커버스토리 4종)":"(4 cover stories)","선택 전략을 N개씩 한 페이로드로":"fuse N selected strategies per payload",
+ "전략 선택":"Strategy select","🔍 공격 전 정찰 실행 (유출 정보 → 전 전략에 주입)":"🔍 Recon before attack (leaked info → all strategies)",
+ "높을수록 취약":"higher = more vulnerable","(타깃 LLM별 — 위험도 가중)":"(by Target LLM — risk-weighted)","(SQLITE · DATA/REDTEAM.DB)":"(SQLITE · DATA/REDTEAM.DB)",
+ "단발 방어 테스트 + 판정 검증을 한 곳에서":"one-off defense test + judge verification in one place",
+ "전환 시 페이지가 새로고침됩니다 / Page reloads on switch.":"전환 시 페이지가 새로고침됩니다 / Page reloads on switch.",
+ "커스텀 시스템 프롬프트 (선택, 실제 로봇 프롬프트로 교체)":"Custom system prompt (optional, replace with real robot prompt)",
+};
+let LANG=localStorage.getItem('lang')||'ko';
+function _translateNode(el){
+  if(el.nodeType===1){ if(el.getAttribute&&el.getAttribute('data-i18n-skip')!==null)return;
+    ['placeholder','title'].forEach(a=>{if(el.hasAttribute&&el.hasAttribute(a)){const v=(el.getAttribute(a)||'').trim();if(I18N_EN[v]!==undefined)el.setAttribute(a,I18N_EN[v]);}});
+    for(const c of [...el.childNodes])_translateNode(c); return; }
+  if(el.nodeType===3){const raw=el.nodeValue,k=raw.trim();if(k&&I18N_EN[k]!==undefined)el.nodeValue=raw.replace(k,I18N_EN[k]);}
+}
+function translateTree(root){ if(LANG!=='en'||!root)return; if(root.nodeType===1&&root.getAttribute&&root.getAttribute('data-i18n-skip')!==null)return; _translateNode(root); }
+if(LANG==='en'){ document.documentElement.lang='en';
+  const obs=new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>translateTree(n))));
+  document.addEventListener('DOMContentLoaded',()=>{translateTree(document.body);obs.observe(document.body,{childList:true,subtree:true});});
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const r=document.querySelector(`input[name=lang][value=${LANG}]`); if(r)r.checked=true;
+  $$('input[name=lang]').forEach(x=>x.onchange=()=>{localStorage.setItem('lang',x.value);location.reload();});
+});
 
 // 햄버거 메뉴 · 뷰 전환
 const VIEW_NAMES={attack:'공격 · 벤치',history:'성공 전략 · 기록',compare:'취약점 비교',playground:'플레이그라운드',settings:'⚙ 설정'};
