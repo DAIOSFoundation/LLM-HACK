@@ -544,15 +544,24 @@ boot().then(()=>{ try{resumeBench();}catch(_){}});
 
 // ---------- 타깃 엔드포인트 설정 (⚙ 설정 탭) ----------
 let TGT_MODE='mock', TGT_INFO='';
+let ROLE_CUR={};
 function setChip(mode){
   TGT_MODE=mode;
   const c=$('#tgtChip');c.textContent='타깃: '+(mode==='live'?'HTTP':'LLM');
   c.className='chip '+mode;
-  const info=$('#a-tgtinfo');
-  if(info)info.innerHTML=mode==='live'
-    ? L('🎯 타깃: <b>HTTP 엔드포인트</b> ','🎯 Target: <b>HTTP endpoint</b> ')+esc(TGT_INFO||L('(⚙설정에서 URL 지정)','(set URL in ⚙Settings)'))
-    : L('🎯 타깃: <b>LLM 에이전트</b> — ⚙설정의 <b>타깃 LLM</b>+<b>시스템 프롬프트</b>로 실제 공격','🎯 Target: <b>LLM agent</b> — real attack via <b>Target LLM</b>+<b>system prompt</b> in ⚙Settings');
+  renderBenchRoles();
 }
+// 공격·벤치 상단에 현재 공격자·타깃(방어자)·판정 표시
+function renderBenchRoles(){
+  const el=$('#a-tgtinfo'); if(!el)return;
+  const lbl=k=>((ROLE_BK[k]||{}).label||k||'?');
+  const atk=lbl(ROLE_CUR.attacker), jdg=lbl(ROLE_CUR.judge);
+  const tgt = TGT_MODE==='live'
+    ? (L('🌐 HTTP 엔드포인트','🌐 HTTP endpoint')+(TGT_INFO?' '+esc(TGT_INFO):''))
+    : ('🤖 <b>'+esc(lbl(ROLE_CUR.defender))+'</b>');
+  el.innerHTML=`⚔ ${L('공격자','Attacker')}: <b>${esc(atk)}</b> &nbsp;·&nbsp; 🎯 ${L('타깃(방어자)','Target')}: ${tgt} &nbsp;·&nbsp; ⚖ ${L('판정','Judge')}: <b>${esc(jdg)}</b> <a href="#" id="a-rolelink" class="muted">${L('설정 ⚙','settings ⚙')}</a>`;
+}
+document.addEventListener('click',e=>{ if(e.target.id==='a-rolelink'){e.preventDefault();switchView('settings');}});
 function toggleLiveFields(){
   const live=document.querySelector('input[name=tmode]:checked').value==='live';
   $('#liveFields').style.opacity=live?'1':'.45';
@@ -626,7 +635,7 @@ $('#t-test').onclick=async()=>{
 let ROLE_BK={};
 async function loadRoles(){
   const d=await (await fetch('/api/roles')).json();
-  ROLE_BK=d.backends||{};
+  ROLE_BK=d.backends||{}; ROLE_CUR=d.roles||{};
   const opt=(sel)=>d.available.map(k=>{
     const b=ROLE_BK[k]||{}; const phys=b.physical_ai?' 🤖':'';
     return `<option value="${k}" ${sel===k?'selected':''}>${esc(b.label||k)}${phys}</option>`;
@@ -634,7 +643,7 @@ async function loadRoles(){
   $('#r-attacker').innerHTML=opt(d.roles.attacker);
   $('#r-defender').innerHTML=opt(d.roles.defender);
   $('#r-judge').innerHTML=opt(d.roles.judge);
-  roleWarn(); renderEndpoints();
+  roleWarn(); renderEndpoints(); renderBenchRoles();
 }
 function roleWarn(){
   const w=[];
@@ -663,6 +672,7 @@ $('#r-save').onclick=async()=>{
   const body={attacker:$('#r-attacker').value,defender:$('#r-defender').value,judge:$('#r-judge').value};
   $('#r-warn').innerHTML='<span class="spin"></span> 저장 중';
   const r=await (await fetch('/api/roles',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+  ROLE_CUR=r.roles||ROLE_CUR; renderBenchRoles();
   const warn=r.roles.attacker==='claude'?' · <span style="color:var(--warn)">⚠ Claude 공격자는 생성 거부 가능</span>':'';
   $('#r-warn').innerHTML=`<span style="color:var(--ok)">역할 저장됨: 공격=${r.roles.attacker}·방어=${r.roles.defender}·판정=${r.roles.judge}</span>${warn}`;
 };
