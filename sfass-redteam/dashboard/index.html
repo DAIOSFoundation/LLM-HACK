@@ -114,10 +114,11 @@
 <section class="view" id="v-settings">
   <div class="card">
     <h3>🧠 모델 역할</h3>
-    <p class="muted small" style="margin:0 0 10px">각 역할(공격자·방어자·판정)에 쓸 백엔드를 지정합니다. NVIDIA Nemotron·MiniMax·Claude 중 선택. 🤖=피지컬AI 특화(로봇 두뇌 에뮬레이션 — 방어자로 쓰면 실제 타깃과 근접). 공격자=Claude 는 재밍 페이로드 생성을 거부할 수 있습니다.</p>
+    <p class="muted small" style="margin:0 0 10px">각 역할(공격자·판정)에 쓸 백엔드를 지정합니다. NVIDIA Nemotron·MiniMax·Claude 중 선택. 🤖=피지컬AI 특화(로봇 두뇌).
+      <b>「방어자」 = 아래 공격 타깃이 Mock일 때 그 Mock 에이전트를 연기하는 모델</b>입니다(= 공격 대상). 공격 타깃이 Live면 실물 엔드포인트가 대상이라 방어자 역할은 무시됩니다. 공격자=Claude 는 재밍 페이로드 생성을 거부할 수 있습니다.</p>
     <div class="tb-row">
       <label class="inl">공격자 <select id="r-attacker" class="mini"></select></label>
-      <label class="inl">방어자 <select id="r-defender" class="mini"></select></label>
+      <label class="inl">방어자<span class="muted">(=Mock 타깃)</span> <select id="r-defender" class="mini"></select></label>
       <label class="inl">판정 <select id="r-judge" class="mini"></select></label>
       <button id="r-save" class="ghost" style="padding:6px 12px">역할 저장</button>
       <button id="r-test" class="ghost" style="padding:6px 12px">🔌 연결 테스트</button>
@@ -162,10 +163,10 @@
     <h3>🎯 공격 타깃 (Mock / Live 엔드포인트)</h3>
     <div class="tb-row" style="margin-bottom:10px">
       <div class="seg">
-        <label class="segbtn"><input type="radio" name="tmode" value="mock" checked> Mock 방어에이전트(로컬)</label>
+        <label class="segbtn"><input type="radio" name="tmode" value="mock" checked> Mock 방어에이전트 — 위 「방어자」 모델이 연기</label>
         <label class="segbtn"><input type="radio" name="tmode" value="live"> Live 실물 엔드포인트</label>
       </div>
-      <span class="muted small">Live 선택 시 아래 값이 실제 대회 서버로 전송됩니다. 개발자도구 Network 탭에서 제출 요청 1건을 복사해 채우세요.</span>
+      <span class="muted small">Mock: 위 <b>방어자</b> 역할 모델 + 방어 레벨로 로컬 에뮬레이션(현장 전 전략 실험용). Live: 아래 값이 실제 대회 서버로 전송(방어자 역할 무시). 개발자도구 Network 탭에서 제출 요청 1건을 복사해 채우세요.</span>
     </div>
     <div id="liveFields">
       <div class="tb-grid">
