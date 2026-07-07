@@ -143,6 +143,9 @@ MOCK_SUCCESS = {
 OBJECTIVES: List[Dict[str, Any]] = CFG.get("objectives", [])
 AGENT = MockAgent(NVIDIA, OBJECTIVES)
 MOCK_TARGET = MockTarget(AGENT)
+# 실제 로봇 에이전트를 에뮬레이션하는 기본 타깃 시스템 프롬프트(허용/금지 동작·[MOTION:] 규칙 포함).
+# 현장에선 정찰로 유출한 실타깃 프롬프트로 교체.
+DEFAULT_SYSTEM_PROMPT = AGENT.system_prompt()
 
 store.init_db()  # 성공 전략·시도 기록 SQLite 준비
 
@@ -161,9 +164,12 @@ def _attacker() -> Attacker:
     return Attacker(_backend("attacker")[0])
 
 
-def _prepare_defender(defense: str) -> None:
-    AGENT.set_defense(defense)
+def _prepare_defender(defense: Optional[str] = None) -> None:
+    """LLM 에이전트 타깃 준비: 지정된 LLM 백엔드 + 타깃 시스템 프롬프트(실타깃 에뮬레이션)."""
+    if defense:
+        AGENT.set_defense(defense)
     AGENT.set_llm(_backend("defender")[0])
+    AGENT.set_custom_system(STATE.get("system_prompt") or None)
 
 # --- 런타임 타깃 상태 (현장에서 대시보드로 교체) ------------------------
 DEFAULT_TARGET = CFG.get("target", {
@@ -179,13 +185,16 @@ DEFAULT_SUCCESS = CFG.get("success", {
 })
 
 STATE: Dict[str, Any] = {
-    "mode": "mock",                 # 'mock' | 'live'
+    # 타깃 종류: 'mock' = LLM 에이전트 직접 공격(실제 LLM+시스템프롬프트), 'live' = HTTP 엔드포인트(실물 로봇 API)
+    "mode": "mock",
     "target": copy.deepcopy(DEFAULT_TARGET),
     "response": copy.deepcopy(DEFAULT_RESPONSE),
     "success": copy.deepcopy(DEFAULT_SUCCESS),
     "_live": None,                  # 캐시된 HTTPTarget
     "last_test": None,
     "persona": "",                  # 사용자 배경 시나리오(정당한 사정) — 전 전략 공통 주입
+    # LLM 에이전트 타깃이 실행할 시스템 프롬프트(실제 로봇 지시문 에뮬레이션 — 정찰유출/붙여넣기/기본값)
+    "system_prompt": DEFAULT_SYSTEM_PROMPT,
 }
 
 
@@ -375,6 +384,8 @@ def api_target_get():
         "mode": STATE["mode"], "target": STATE["target"],
         "response": STATE["response"], "success": STATE["success"],
         "last_test": STATE["last_test"],
+        "system_prompt": STATE.get("system_prompt", ""),
+        "system_prompt_default": DEFAULT_SYSTEM_PROMPT,
     })
 
 
@@ -386,6 +397,8 @@ def api_target_set():
     for k in ("target", "response", "success"):
         if isinstance(d.get(k), dict):
             STATE[k] = d[k]
+    if isinstance(d.get("system_prompt"), str):
+        STATE["system_prompt"] = d["system_prompt"].strip()
     STATE["_live"] = None  # 다음 사용 시 재구성
     return jsonify({"ok": True, "mode": STATE["mode"]})
 
@@ -495,6 +508,12 @@ def api_history_clear():
     return jsonify({"ok": True, "deleted": n})
 
 
+@app.route("/api/compare")
+def api_compare():
+    """방어자(=공격 대상) 모델/에이전트별 취약점 점수 비교."""
+    return jsonify({"models": store.model_scores()})
+
+
 def _recon_phase(tgt, judge_backend, jdg_name, tgt_label, probes=None):
     """정찰 단계 (SSE 제너레이터).
 
@@ -566,11 +585,10 @@ def api_attack_stream():
     프론트에서 전략별 성공률을 집계한다. recon=1 이면 벤치 전에 정찰을 실행해
     유출 정보를 attacker 문맥으로 주입한다.
     """
-    # 목표·방어레벨 스윕 (다중 선택 지원; 단일값 파라미터도 하위호환)
+    # 목표 스윕 (다중 선택 지원; 단일값 파라미터도 하위호환).
+    # 방어레벨 개념은 제거 — LLM 타깃은 STATE['system_prompt'](실타깃 에뮬레이션)로 동작.
     objectives = [o for o in request.args.get("objectives", request.args.get("objective_id", "")).split(",") if o]
-    defenses = [d for d in request.args.get("defense_levels", request.args.get("defense_level", "medium")).split(",") if d]
     objectives = objectives or [None]
-    defenses = defenses or ["medium"]
     trials = int(request.args.get("trials", "2"))
     keys = request.args.get("strategies", "")
     run_recon = request.args.get("recon") in ("1", "true")
@@ -600,13 +618,10 @@ def api_attack_stream():
         units = [[k] for k in strat_keys]
         truncated = False
 
-    def _tgt_label(defense):
-        if mode == "live":
-            return "LIVE %s" % STATE["target"].get("url", "")
-        return "MOCK(%s/방어=%s)" % (def_name, defense)
+    tgt_kind = ("HTTP " + STATE["target"].get("url", "")) if mode == "live" else ("LLM(%s)" % def_name)
 
     def stream():
-        yield _sse({"type": "start", "objectives": objectives, "defenses": defenses,
+        yield _sse({"type": "start", "objectives": objectives,
                     "trials": trials, "strategies": strat_keys, "target_mode": mode,
                     "recon": run_recon, "fusion": fusion, "units": len(units)})
         div = []
@@ -618,10 +633,9 @@ def api_attack_stream():
             div.append("언어순환")
         if persona_rotate:
             div.append("페르소나순환")
-        total = len(objectives) * len(defenses) * len(units) * trials
-        yield _sse(_log("info", "▶ 벤치 · 공격자=%s · 타깃=%s · 목표 %d × 방어 %d × 유닛 %d × %d회 = 총 %d시도%s%s%s"
-                        % (atk_name, "LIVE" if mode == "live" else "MOCK",
-                           len(objectives), len(defenses), len(units), trials, total,
+        total = len(objectives) * len(units) * trials
+        yield _sse(_log("info", "▶ 벤치 · 공격자=%s · 타깃=%s · 목표 %d × 유닛 %d × %d회 = 총 %d시도%s%s%s"
+                        % (atk_name, tgt_kind, len(objectives), len(units), trials, total,
                            " · " + "·".join(div) if div else "",
                            " · Bio주입" if (base_persona and not persona_rotate) else "",
                            " · 정찰ON" if run_recon else "")))
@@ -630,23 +644,20 @@ def api_attack_stream():
         if atk_name == "claude":
             yield _sse(_log("judge", "  ⚠ 공격자=Claude: 재밍 페이로드 생성을 거부할 수 있어 성공률이 낮게 나올 수 있음"))
 
+        _prepare_defender()
+        tgt = _active_target()
+        judge = _active_judge()
         recon_ctx: Optional[str] = None
-        _prepare_defender(defenses[0])
         if run_recon:
-            recon_ctx = yield from _recon_phase(_active_target(), jdg_backend, jdg_name, _tgt_label(defenses[0]))
+            recon_ctx = yield from _recon_phase(tgt, jdg_backend, jdg_name, tgt_kind)
 
         history: List[Dict[str, Any]] = []
-        last_by: Dict[str, Dict[str, Any]] = {}   # (unitkey|obj|defense) -> 직전 결과(refine용)
+        last_by: Dict[str, Dict[str, Any]] = {}   # (unitkey|obj) -> 직전 결과(refine용)
         TEMPS = [0.7, 1.0, 1.3]
         idx = 0
         for oid in objectives:
             obj = _obj(oid) if oid else None
-            for defense in defenses:
-                _prepare_defender(defense)
-                tgt = _active_target()
-                judge = _active_judge()
-                tgt_label = _tgt_label(defense)
-                for unit in units:
+            for unit in units:
                     strat = combine_strategies(unit)
                     ukey = strat.key
                     for t in range(trials):
@@ -654,13 +665,11 @@ def api_attack_stream():
                         temp = TEMPS[t % len(TEMPS)] if temp_sweep else None
                         lang = LANGS[idx % len(LANGS)] if lang_rotate else None
                         persona = POOL_PERSONAS[idx % len(POOL_PERSONAS)] if persona_rotate else base_persona
-                        rkey = "%s|%s|%s" % (ukey, oid, defense)
+                        rkey = "%s|%s" % (ukey, oid)
                         try:
                             prev = last_by.get(rkey)
                             gmode = "개선(refine)" if (prev and prev.get("agent_text")) else "생성(generate)"
-                            tag = "%s%s%s" % (oid or "-",
-                                              "/방어%s" % defense if len(defenses) > 1 else "",
-                                              "/%s" % lang if lang else "")
+                            tag = "%s%s" % (oid or "-", "/%s" % lang if lang else "")
                             yield _sse(_log("gen", "[%d/%d] %s · %s · try%d · %s%s"
                                             % (idx, total, strat.name, tag, t + 1, gmode,
                                                " · T%.1f" % temp if temp else "")))
@@ -671,7 +680,7 @@ def api_attack_stream():
                                 gen = attacker.generate(obj, strat, recon_ctx, history,
                                                         temperature=temp, persona=persona, lang=lang)
                             pv = (gen.get("payload", "") or "").replace("\n", " ")[:90]
-                            yield _sse(_log("send", "  → [%s] 전송: %s" % (tgt_label, pv)))
+                            yield _sse(_log("send", "  → [%s] 전송: %s" % (tgt_kind, pv)))
                             resp = tgt.send(gen.get("payload", ""))
                             if resp.error:
                                 yield _sse(_log("err", "  ← 전송 오류: %s" % resp.error[:100]))
@@ -686,7 +695,7 @@ def api_attack_stream():
                                 (verdict.get("evidence") or "")[:70])))
                             rec = {
                                 "type": "attempt", "strategy": ukey, "strategy_name": strat.name,
-                                "strategy_angle": strat.angle, "objective": oid, "defense_level": defense,
+                                "strategy_angle": strat.angle, "objective": oid, "defense_level": "",
                                 "risk": strat.risk, "summary": strat.summary,
                                 "lang": lang, "temperature": temp,
                                 "rationale": gen.get("rationale") or gen.get("change"),
