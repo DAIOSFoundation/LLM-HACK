@@ -760,7 +760,7 @@ function tryCard(r){
      <span class="name">${esc(r.strategy_name)}</span>
      ${riskBadge(r.risk)} ${badge}
      ${cfgChip(r)}<span class="chip">try${r.trial}</span>
-     <span class="muted small" style="margin-left:auto">🕐 ${esc(r._ts||fmtTs(r.created_at))} · ${r.source} · conf ${(+r.confidence).toFixed(2)}</span>
+     <span class="muted small" style="margin-left:auto">🕐 ${esc(r._ts||fmtTs(r.created_at))}</span>
    </div>
    <div class="body">
      ${r.summary?`<div class="k">요약설명 · 위험도 ${(RISK[r.risk]||RISK.med).t}</div><pre>${esc(r.summary)}</pre>`:''}
@@ -937,7 +937,7 @@ function histCard(r){
      <span class="name">${esc(r.strategy_name||r.strategy||'')}</span>
      ${riskBadge(r.risk)} <span class="badge ${ok?'ok':'bad'}">${ok?'성공':'실패'}</span>
      ${cfgChip(r)}
-     <span class="muted small" style="margin-left:auto">🕐 ${esc(fmtTs(r.created_at)||'-')} · ${esc(r.source||'')} · conf ${(+r.confidence||0).toFixed(2)}</span>
+     <span class="muted small" style="margin-left:auto">🕐 ${esc(fmtTs(r.created_at)||'-')}</span>
    </div>
    <div class="body">
      ${r.summary?`<div class="k">요약설명 · 위험도 ${(RISK[r.risk]||RISK.med).t}</div><pre>${esc(r.summary)}</pre>`:''}
