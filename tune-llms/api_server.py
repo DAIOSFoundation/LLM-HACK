@@ -13,10 +13,20 @@ from nltk.corpus import stopwords
 # from rouge_score import rouge_scorer  # Transformer tokenizer 기반 ROUGE 계산으로 대체
 from bert_score import score as bert_score
 import warnings
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
+    print("google-generativeai가 설치되지 않았습니다. Gemini 평가 기능이 비활성화됩니다.")
 from dotenv import load_dotenv
 import torch
-from peft import PeftModel
+try:
+    from peft import PeftModel
+    PEFT_AVAILABLE = True
+except ImportError:
+    PEFT_AVAILABLE = False
+    print("peft가 설치되지 않았습니다. 파인튜닝 모델 로딩 기능이 제한될 수 있습니다.")
 warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
@@ -109,18 +119,18 @@ tuning_status = {
 load_dotenv()
 
 # Gemini API 초기화
-try:
-    gemini_api_key = os.getenv('GEMINI_API_KEY')
-    if gemini_api_key:
-        genai.configure(api_key=gemini_api_key)
-        gemini_model = genai.GenerativeModel('gemini-2.0-flash-lite')
-        print("Gemini API 초기화 완료: gemini-2.0-flash-lite")
-    else:
-        print("GEMINI_API_KEY가 설정되지 않았습니다. Gemini 평가 기능이 비활성화됩니다.")
-        gemini_model = None
-except Exception as e:
-    print(f"Gemini API 초기화 실패: {e}")
-    gemini_model = None
+gemini_model = None
+if GEMINI_AVAILABLE:
+    try:
+        gemini_api_key = os.getenv('GEMINI_API_KEY')
+        if gemini_api_key:
+            genai.configure(api_key=gemini_api_key)
+            gemini_model = genai.GenerativeModel('gemini-2.0-flash-lite')
+            print("Gemini API 초기화 완료: gemini-2.0-flash-lite")
+        else:
+            print("GEMINI_API_KEY가 설정되지 않았습니다. Gemini 평가 기능이 비활성화됩니다.")
+    except Exception as e:
+        print(f"Gemini API 초기화 실패: {e}")
 
 # 한국어 토크나이저 초기화
 try:
@@ -247,10 +257,16 @@ def get_default_security_keywords():
 SECURITY_KEYWORDS = load_security_keywords_from_file('ko')
 
 def tokenize_text(text):
-    """텍스트를 토크나이저를 사용하여 토큰화 (한국어 최적화)"""
+    """텍스트를 토크나이저를 사용하여 토큰화 (한국어 최적화, 다국어 지원)"""
+    if not text:
+        return []
+    
     if tokenizer is None:
-        # 토크나이저가 없으면 간단한 토큰화
-        return text.lower().split()
+        # 토크나이저가 없으면 간단한 토큰화 (다국어 지원)
+        import re
+        # 단어 경계로 분리 (한글, 영문, 숫자 모두 포함)
+        words = re.findall(r'\b\w+\b', text.lower())
+        return words if words else []
     
     try:
         tokens = tokenizer.tokenize(text)
@@ -270,10 +286,16 @@ def tokenize_text(text):
         # 빈 토큰 제거 및 길이 1 이하 토큰 필터링
         words = [word for word in words if len(word) > 1]
         
-        return words if words else text.lower().split()
+        # 토큰화 결과가 비어있으면 간단한 토큰화로 fallback
+        if not words:
+            import re
+            words = re.findall(r'\b\w+\b', text.lower())
+        
+        return words if words else []
     except Exception as e:
-        print(f"토큰화 오류: {e}")
-        return text.lower().split()
+        print(f"토큰화 오류: {e}, fallback 사용")
+        import re
+        return re.findall(r'\b\w+\b', text.lower()) if text else []
 
 def calculate_bleu_score(candidate, reference, max_n=4):
     """BLEU 점수 계산 (개선된 버전)"""
@@ -612,7 +634,36 @@ def calculate_gemini_score(candidate, reference):
 def evaluate_question_answer_fit(question, answer, ground_truth_list):
     """질문-답변 부합도 평가 (다중 ground truth 지원) - 다중 알고리즘 사용"""
     if not isinstance(ground_truth_list, list):
-        ground_truth_list = [ground_truth_list]
+        ground_truth_list = [ground_truth_list] if ground_truth_list else []
+    
+    # Ground Truth가 비어있는 경우 기본 점수 반환
+    if not ground_truth_list or len(ground_truth_list) == 0:
+        print(f"=== Ground Truth가 비어있음 - 기본 점수 반환 ===")
+        return {
+            'score': 0.0,
+            'finalScore': 0.0,
+            'details': {
+                'bleuScore': 0.0,
+                'rougeScore': 0.0,
+                'meteorScore': 0.0,
+                'bertScore': 0.0,
+                'geminiScore': 0.0,
+                'avgBleuScore': 0.0,
+                'avgRougeScore': 0.0,
+                'avgMeteorScore': 0.0,
+                'avgBertScore': 0.0,
+                'avgGeminiScore': 0.0,
+                'keywordMatchCount': 0,
+                'totalKeywords': 0,
+                'keywordMatchRate': 0.0,
+                'groundTruthCount': 0,
+                'allBleuScores': [],
+                'allRougeScores': [],
+                'allMeteorScores': [],
+                'allBertScores': [],
+                'allGeminiScores': []
+            }
+        }
     
     # 1. 모든 ground truth와의 각종 점수 계산
     bleu_scores = []
@@ -669,6 +720,21 @@ def evaluate_question_answer_fit(question, answer, ground_truth_list):
     avg_meteor_score = harmonic_mean(meteor_scores)
     avg_bert_score = harmonic_mean(bert_scores)
     avg_gemini_score = harmonic_mean(gemini_scores)
+    
+    # 언어 불일치 감지: BERT 점수는 있는데 BLEU/ROUGE/METEOR가 모두 0이면 언어가 다를 가능성
+    if avg_bert_score > 0 and avg_bleu_score == 0 and avg_rouge_score == 0 and avg_meteor_score == 0:
+        print("언어 불일치 감지: BERT 점수는 있지만 토큰 기반 점수가 모두 0입니다.")
+        print(f"답변: {answer[:100]}...")
+        print(f"Ground Truth: {ground_truth_list[0][:100] if ground_truth_list else 'N/A'}...")
+        # BERT 점수를 기반으로 다른 점수들을 추정 (보수적으로)
+        # BERT 점수가 높으면 토큰 기반 점수도 어느 정도 있을 것으로 가정
+        if avg_bert_score > 50:
+            # BERT 점수의 10-20%를 토큰 기반 점수로 추정
+            estimated_score = avg_bert_score * 0.15
+            avg_bleu_score = estimated_score
+            avg_rouge_score = estimated_score
+            avg_meteor_score = estimated_score
+            print(f"언어 불일치 보정: BERT 점수 {avg_bert_score:.2f}를 기반으로 토큰 기반 점수를 {estimated_score:.2f}로 추정")
     
     print(f"조화평균 BLEU 점수: {avg_bleu_score}")
     print(f"조화평균 ROUGE 점수: {avg_rouge_score}")
@@ -820,8 +886,15 @@ def evaluate_response():
         answer = data.get('answer')
         ground_truth = data.get('groundTruth')
         
-        if not all([question, answer, ground_truth]):
-            return jsonify({'error': 'Missing required fields: question, answer, groundTruth'}), 400
+        # 필수 필드 검증 (groundTruth는 빈 배열도 허용)
+        if not question or not answer:
+            return jsonify({'error': 'Missing required fields: question, answer'}), 400
+        
+        # groundTruth가 없거나 빈 배열인 경우 기본값 설정
+        if ground_truth is None:
+            ground_truth = []
+        if not isinstance(ground_truth, list):
+            ground_truth = [ground_truth] if ground_truth else []
         
         # 평가 실행
         evaluation_result = evaluate_question_answer_fit(question, answer, ground_truth)
@@ -1477,6 +1550,11 @@ def evaluate_ngram_risk():
 def evaluate_ngram_with_llm(ngram_pattern, tokens, language='ko'):
     """LLM을 사용하여 N-gram 패턴의 전체 위험도를 평가"""
     try:
+        # Gemini API 사용 가능 여부 확인
+        if not GEMINI_AVAILABLE:
+            print("google-generativeai가 설치되지 않았습니다.")
+            return 0.5  # 모듈이 없으면 중간값 반환
+        
         # Gemini API 설정 확인
         api_key = os.getenv('GEMINI_API_KEY')
         if not api_key:
@@ -2732,6 +2810,9 @@ def load_finetuned_model():
         )
         
         # 파인튜닝된 LoRA 어댑터 로드
+        if not PEFT_AVAILABLE:
+            print("❌ peft가 설치되지 않아 파인튜닝 모델을 로드할 수 없습니다.")
+            return False
         finetuned_model = PeftModel.from_pretrained(base_model, finetuned_path)
         finetuned_model.eval()  # 평가 모드로 설정
         

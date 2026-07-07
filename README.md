@@ -23,20 +23,28 @@ LLM Spear&Shield Project는 대규모 언어 모델의 프롬프트 인젝션 �
 llm-spear-shield/
 ├── ollama-chat/          # React 프론트엔드 애플리케이션
 │   ├── src/
-│   │   ├── App.jsx       # 메인 애플리케이션 컴포넌트 (4,143줄)
+│   │   ├── App.jsx       # 메인 애플리케이션 컴포넌트 (~4,700줄)
 │   │   ├── components/   # React 컴포넌트들
 │   │   │   ├── Graph3D.jsx    # 3D 연관성 그래프 컴포넌트
 │   │   │   ├── JsonTree.jsx   # JSON 트리 편집 컴포넌트
-│   │   │   ├── NgramPatterns.jsx # N-gram 패턴 분석 컴포넌트
+│   │   │   ├── NgramPatterns.jsx # N-gram 패턴 분석 및 LLM 리스크 평가 컴포넌트
 │   │   │   └── ErrorBoundary.jsx # 에러 처리 컴포넌트
+│   │   ├── locales/      # 다국어 지원
+│   │   │   ├── translations.js  # 한국어/영어 UI 번역 (~1,100줄)
+│   │   │   ├── prompts.js       # 프롬프트 인젝션 다국어 프롬프트 (~500줄)
+│   │   │   └── trainingData.js  # 파인튜닝 훈련 데이터 다국어 관리
 │   │   └── utils/        # 유틸리티 함수들
+│   │       └── promptParser.js  # 시스템 프롬프트 포맷팅
 │   └── public/           # 정적 파일들
-│       ├── eval.json     # 평가 질문 데이터 (658줄)
-│       ├── sexual_expressions.json  # 성적 표현 데이터 (1,202줄)
-│       ├── result.json   # 위험도 평가 결과 저장소 (404줄)
-│       └── security.json # 보안 키워드 정의 파일 (1,093줄)
+│       ├── eval.json     # 평가 질문 데이터 (한국어)
+│       ├── eval_en.json  # 평가 질문 데이터 (영어)
+│       ├── sexual_expressions.json  # 성적 표현 데이터 (한국어)
+│       ├── sexual_expressions_en.json # 성적 표현 데이터 (영어)
+│       ├── result.json   # 위험도 평가 결과 저장소
+│       ├── security.json # 보안 키워드 정의 파일 (한국어)
+│       └── security_en.json # 보안 키워드 정의 파일 (영어)
 └── tune-llms/            # Python 백엔드 및 파인튜닝 도구
-    ├── api_server.py     # Flask API 서버 (2,538줄)
+    ├── api_server.py     # Flask API 서버 (~3,110줄)
     ├── scripts/          # 파인튜닝 스크립트들
     │   ├── create_dataset.py # 데이터셋 생성
     │   ├── create_enhanced_dataset.py # 향상된 데이터셋 생성
@@ -46,9 +54,11 @@ llm-spear-shield/
     │   ├── download_model.py # 모델 다운로드
     │   ├── download_gguf_model.py # GGUF 모델 다운로드
     │   ├── create_ollama_model.py # Ollama 모델 생성
+    │   ├── convert_to_ollama.py # 파인튜닝 모델 Ollama 변환
     │   └── evaluate.py # 모델 평가
     ├── data/             # 트레이닝 데이터
-    │   └── security_dataset.json # 보안 데이터셋 (19개 샘플)
+    │   ├── security_dataset.json    # 보안 데이터셋 (한국어)
+    │   └── security_dataset_en.json # 보안 데이터셋 (영어)
     ├── models/           # 모델 체크포인트
     │   ├── checkpoints/  # 학습 체크포인트
     │   ├── finetuned/    # 파인튜닝된 모델 (LoRA 어댑터)
@@ -183,6 +193,23 @@ llm-spear-shield/
 - **Ollama 모델 통합**: 파인튜닝된 모델을 Ollama에 자동 설치
 - **WandB 모니터링**: 학습 과정을 WandB를 통해 실시간 모니터링
 - **모델 평가**: 파인튜닝된 모델의 성능 평가 및 검증
+- **웹 UI 기반 튜닝 관리**: 프론트엔드에서 모델/데이터셋/체크포인트 선택, LoRA 파라미터 설정, 학습 시작 및 실시간 진행률 모니터링
+
+### 12. N-gram LLM 리스크 평가 시스템
+- **LLM 기반 복합 리스크 평가**: Gemini LLM을 활용한 N-gram 패턴의 컨텍스트 기반 위험도 분석
+- **개별 토큰 위험도 스코어링**: 각 토큰을 high/medium/low 3단계로 위험도 평가
+- **4-gram 패턴 분석**: 4-gram 단위로 보안 키워드 패턴을 분석하고 위험 컨텍스트 제공
+- **색상 코딩 시각화**: 위험도별 색상 구분으로 직관적인 리스크 표시
+- **접기/펼치기 UI**: N-gram 설명을 접기/펼치기 방식으로 제공하여 공간 절약
+
+### 13. 다국어 지원 시스템
+- **한국어/영어 전환**: 헤더의 언어 선택 드롭다운으로 실시간 언어 전환
+- **중앙화된 번역 관리**: `translations.js`를 통한 모든 UI 텍스트 중앙 관리
+- **프롬프트 다국어 지원**: `prompts.js`를 통한 시스템 프롬프트 다국어 관리
+- **훈련 데이터 다국어 지원**: `trainingData.js`를 통한 파인튜닝 데이터 다국어 관리
+- **동적 데이터 로딩**: 언어 선택에 따른 동적 데이터 파일 로딩 (eval.json, security.json, sexual_expressions.json 등)
+- **백엔드 API 다국어 지원**: 모든 API 엔드포인트에서 `language` 쿼리 파라미터를 통한 다국어 데이터 서빙
+- **영문 데이터 파일**: eval_en.json, security_keywords_en.json, security_dataset_en.json, sexual_expressions_en.json
 
 ## 📊 평가 시스템 상세
 
@@ -450,7 +477,11 @@ python api_server.py
 
 ## 🔌 API 문서
 
-### 평가 API (`/api/evaluate`)
+> 모든 API 엔드포인트는 `http://localhost:5001`에서 서빙되며, 다국어 지원이 필요한 엔드포인트는 `?language=ko` 또는 `?language=en` 쿼리 파라미터를 지원합니다.
+
+### 평가 API
+
+#### 단건 평가 (`POST /api/evaluate`)
 ```http
 POST /api/evaluate
 Content-Type: application/json
@@ -492,16 +523,53 @@ Content-Type: application/json
 }
 ```
 
-### 보안 키워드 관리 API
-
-#### 보안 키워드 조회 (`/api/security-keywords`)
+#### 배치 평가 (`POST /api/evaluate/batch`)
 ```http
-GET /api/security-keywords
+POST /api/evaluate/batch
+Content-Type: application/json
+
+[
+  { "question": "질문1", "answer": "답변1", "groundTruth": ["정답1"] },
+  { "question": "질문2", "answer": "답변2", "groundTruth": ["정답2"] }
+]
 ```
 
-#### 보안 키워드 설정 (`/api/security-keywords`)
+#### 평가 데이터 업데이트 (`POST /api/update-eval`)
 ```http
-POST /api/security-keywords
+POST /api/update-eval
+Content-Type: application/json
+
+{
+  "categoryKey": "ownerChange",
+  "questionText": "질문 텍스트",
+  "groundTruth": ["정답1", "정답2"],
+  "fullEvalData": { ... }
+}
+```
+
+#### 결과 저장 (`POST /api/save-result`)
+```http
+POST /api/save-result
+Content-Type: application/json
+
+[ { "category": "ownerChange", "question": "...", "score": 0.85, ... } ]
+```
+
+#### 결과 조회 (`GET /api/load-result`)
+```http
+GET /api/load-result
+```
+
+### 보안 키워드 관리 API
+
+#### 보안 키워드 조회 (`GET /api/security-keywords`)
+```http
+GET /api/security-keywords?language=ko
+```
+
+#### 보안 키워드 설정 (`POST /api/security-keywords`)
+```http
+POST /api/security-keywords?language=ko
 Content-Type: application/json
 
 {
@@ -515,9 +583,9 @@ Content-Type: application/json
 }
 ```
 
-#### AI 키워드 생성 (`/api/generate-security-keywords`)
+#### AI 키워드 생성 (`POST /api/generate-security-keywords`)
 ```http
-POST /api/generate-security-keywords
+POST /api/generate-security-keywords?language=ko
 Content-Type: application/json
 
 {
@@ -525,9 +593,13 @@ Content-Type: application/json
 }
 ```
 
-#### 연관성 분석 (`/api/security-cooccurrence`)
+### 보안 분석 API
+
+#### 연관성 분석 (`GET/POST /api/security-cooccurrence`)
 ```http
-POST /api/security-cooccurrence
+GET /api/security-cooccurrence?language=ko
+
+POST /api/security-cooccurrence?language=ko
 Content-Type: application/json
 
 {
@@ -535,7 +607,20 @@ Content-Type: application/json
 }
 ```
 
-#### 보안 데이터셋 생성 (`/api/security-dataset`)
+#### N-gram LLM 리스크 평가 (`POST /api/ngram-risk-evaluation`)
+```http
+POST /api/ngram-risk-evaluation?language=ko
+Content-Type: application/json
+
+{
+  "ngram_pattern": "계좌 비밀번호 이체 송금",
+  "tokens": ["계좌", "비밀번호", "이체", "송금"]
+}
+```
+
+### 보안 데이터셋 API
+
+#### 데이터셋 생성 (`POST /api/security-dataset`)
 ```http
 POST /api/security-dataset
 Content-Type: application/json
@@ -544,6 +629,105 @@ Content-Type: application/json
   "risk_threshold": 0.4
 }
 ```
+
+#### 데이터셋 조회 (`GET /api/security-dataset`)
+```http
+GET /api/security-dataset
+```
+
+#### 데이터셋 통계 (`GET /api/security-dataset/stats`)
+```http
+GET /api/security-dataset/stats
+```
+- 응답: 총 항목수, 평균/최소/최대 리스크 점수, 프롬프트 타입 분포, 파일 크기, 마지막 수정일
+
+#### 데이터셋 다운로드 (`GET /api/security-dataset/download`)
+```http
+GET /api/security-dataset/download
+```
+
+### 튜닝 관리 API
+
+#### 튜닝 가능 모델 목록 (`GET /api/tuning/models`)
+```http
+GET /api/tuning/models
+```
+- 응답: 로컬 체크포인트, 파인튜닝 모델, Ollama 모델, 기본 HuggingFace 모델 목록
+
+#### 데이터셋 목록 (`GET /api/tuning/datasets`)
+```http
+GET /api/tuning/datasets
+```
+- 응답: data/ 디렉토리의 데이터셋 파일 목록 (크기, 항목수, 형식 정보 포함)
+
+#### 체크포인트 목록 (`GET /api/tuning/checkpoints`)
+```http
+GET /api/tuning/checkpoints?model=google/gemma-2-2b
+```
+
+#### 튜닝 설정 조회/저장 (`GET/POST /api/tuning/config`)
+```http
+GET /api/tuning/config
+
+POST /api/tuning/config
+Content-Type: application/json
+
+{
+  "model": "google/gemma-2-2b",
+  "learning_rate": 0.0002,
+  "batch_size": 2,
+  "epochs": 3,
+  "lora_rank": 16,
+  "lora_alpha": 32
+}
+```
+
+#### 튜닝 시작 (`POST /api/tuning/start`)
+```http
+POST /api/tuning/start
+Content-Type: application/json
+
+{
+  "model": "google/gemma-2-2b",
+  "dataset": "security_dataset.json",
+  "config": { ... }
+}
+```
+
+#### 파인튜닝 상태 확인 (`GET /api/finetune/status`)
+```http
+GET /api/finetune/status?language=ko
+```
+- 응답: `is_running`, `progress` (0-100), `current_epoch`, `current_step`, `total_steps`, `loss`, `status`, `message`
+
+#### 진행률 업데이트 (`POST /api/tuning/progress`)
+```http
+POST /api/tuning/progress
+Content-Type: application/json
+
+{ "progress": 50, "current_epoch": 2, "loss": 0.35 }
+```
+
+### 파인튜닝 모델 추론 API
+
+#### 텍스트 생성 (`POST /api/finetuned-model/generate`)
+```http
+POST /api/finetuned-model/generate
+Content-Type: application/json
+
+{
+  "prompt": "프롬프트 텍스트",
+  "system_prompt": "보안 강화 시스템 프롬프트",
+  "max_length": 512,
+  "temperature": 0.7
+}
+```
+
+#### 모델 상태 확인 (`GET /api/finetuned-model/status`)
+```http
+GET /api/finetuned-model/status
+```
+- 응답: `loaded` (boolean), `model_name`
 
 ## 🧪 테스트 가이드
 

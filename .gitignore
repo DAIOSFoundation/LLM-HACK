@@ -284,4 +284,7 @@ tune-llms/wandb/
 # Ollama chat specific
 ollama-chat/node_modules/
 ollama-chat/dist/
-ollama-chat/dist-ssr/ 
+ollama-chat/dist-ssr/
+
+# MCP/tooling transient output (Playwright screenshots·snapshots·console logs)
+.playwright-mcp/ 
