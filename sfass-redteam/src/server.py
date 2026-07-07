@@ -514,7 +514,7 @@ def api_compare():
     return jsonify({"models": store.model_scores()})
 
 
-def _recon_phase(tgt, judge_backend, jdg_name, tgt_label, probes=None):
+def _recon_phase(tgt, judge_backend, jdg_name, tgt_label, probes=None, lang="ko"):
     """정찰 단계 (SSE 제너레이터).
 
     RECON_PROBES 를 타깃에 보내 응답을 수집하고, 판정 백엔드로 요약해
@@ -522,43 +522,47 @@ def _recon_phase(tgt, judge_backend, jdg_name, tgt_label, probes=None):
     recon_ctx(str|None)를 return 한다 (`yield from` 으로 값 회수).
     """
     probes = probes or RECON_CORE
-    yield _sse(_log("info", "🔍 정찰 시작 · 프로브 %d개(툴/파일/명령 공격면 포함) · 요약 백엔드=%s" % (len(probes), jdg_name)))
+    yield _sse(_log("info", _L(lang, "🔍 정찰 시작 · 프로브 %d개(툴/파일/명령 공격면 포함) · 요약 백엔드=%s",
+                               "🔍 Recon start · %d probes(tool/file/cmd surface) · summarizer=%s") % (len(probes), jdg_name)))
     transcript: List[Dict[str, str]] = []
     for i, probe in enumerate(probes, 1):
         pv = probe.replace("\n", " ")[:80]
-        yield _sse(_log("send", "  🔍→ [%s] 프로브%d: %s" % (tgt_label, i, pv)))
+        yield _sse(_log("send", _L(lang, "  🔍→ [%s] 프로브%d: %s", "  🔍→ [%s] probe%d: %s") % (tgt_label, i, pv)))
         try:
             resp = tgt.send(probe)
         except Exception as e:  # noqa: BLE001
-            yield _sse(_log("err", "  🔍 프로브 오류: %s" % str(e)[:100]))
+            yield _sse(_log("err", _L(lang, "  🔍 프로브 오류: %s", "  🔍 probe error: %s") % str(e)[:100]))
             continue
         rv = (resp.agent_text or "").replace("\n", " ")[:90]
-        yield _sse(_log("recv", "  🔍← %s" % (rv or "(빈 응답)")))
+        yield _sse(_log("recv", "  🔍← %s" % (rv or _L(lang, "(빈 응답)", "(empty)"))))
         transcript.append({"probe": probe, "response": resp.agent_text})
         time.sleep(0.15)
 
     if not transcript:
-        yield _sse(_log("err", "  🔍 정찰 실패 — 응답 없음, 정찰 정보 없이 진행"))
+        yield _sse(_log("err", _L(lang, "  🔍 정찰 실패 — 응답 없음, 정찰 정보 없이 진행",
+                                  "  🔍 recon failed — no responses, proceeding without recon")))
         return None
 
     joined = "\n\n".join(
         "Q: %s\nA: %s" % (t["probe"], (t["response"] or "")[:800]) for t in transcript)
-    yield _sse(_log("judge", "  🔍 유출 응답 요약/구조화 중… (%s)" % jdg_name))
+    yield _sse(_log("judge", _L(lang, "  🔍 유출 응답 요약/구조화 중… (%s)", "  🔍 summarizing leaked responses… (%s)") % jdg_name))
     summary: Optional[Dict[str, Any]] = None
     try:
         out = judge_backend.classify(RECON_SUMMARY_SYSTEM, joined)
         summary = extract_json(out) or {"raw": joined}
         recon_ctx = recon_to_context(summary)
     except Exception as e:  # noqa: BLE001
-        yield _sse(_log("err", "  🔍 요약 오류: %s (원문으로 대체)" % str(e)[:80]))
+        yield _sse(_log("err", _L(lang, "  🔍 요약 오류: %s (원문으로 대체)", "  🔍 summary error: %s (raw fallback)") % str(e)[:80]))
         recon_ctx = joined[:1500]
 
     if recon_ctx:
         yield _sse({"type": "recon", "summary": summary,
                     "context": recon_ctx, "transcript": transcript})
-        yield _sse(_log("info", "  🔍 정찰 완료 · 내부지식 주입 ON (%d자) — 이후 전 시도에 활용" % len(recon_ctx)))
+        yield _sse(_log("info", _L(lang, "  🔍 정찰 완료 · 내부지식 주입 ON (%d자) — 이후 전 시도에 활용",
+                                   "  🔍 recon done · knowledge injection ON (%d chars) — used in all attempts") % len(recon_ctx)))
     else:
-        yield _sse(_log("info", "  🔍 정찰 완료 · 유의미한 유출 없음 (일반 공격으로 진행)"))
+        yield _sse(_log("info", _L(lang, "  🔍 정찰 완료 · 유의미한 유출 없음 (일반 공격으로 진행)",
+                                   "  🔍 recon done · no useful leak (proceeding normally)")))
     return recon_ctx
 
 
@@ -592,6 +596,7 @@ def api_attack_stream():
     trials = int(request.args.get("trials", "2"))
     keys = request.args.get("strategies", "")
     run_recon = request.args.get("recon") in ("1", "true")
+    uilang = request.args.get("lang", "ko")   # UI 로그 언어(순환 언어 lang 과 구분)
     strat_keys = [k for k in keys.split(",") if k] or [s.key for s in STRATEGIES]
     # 다양화 옵션
     fusion = int(request.args.get("fusion", "0") or "0")           # 0=끔, 2/3=전략 N개 조합
@@ -626,30 +631,36 @@ def api_attack_stream():
                     "recon": run_recon, "fusion": fusion, "units": len(units)})
         div = []
         if fusion >= 2:
-            div.append("전략조합=%d개씩(%d유닛)" % (fusion, len(units)))
+            div.append(_L(uilang, "전략조합=%d개씩(%d유닛)", "fusion=%d each(%d units)") % (fusion, len(units)))
         if temp_sweep:
-            div.append("온도다양화")
+            div.append(_L(uilang, "온도다양화", "temp-sweep"))
         if lang_rotate:
-            div.append("언어순환")
+            div.append(_L(uilang, "언어순환", "lang-rotate"))
         if persona_rotate:
-            div.append("페르소나순환")
+            div.append(_L(uilang, "페르소나순환", "persona-rotate"))
         total = len(objectives) * len(units) * trials
-        yield _sse(_log("info", "▶ 벤치 · 공격자=%s · 타깃=%s · 목표 %d × 유닛 %d × %d회 = 총 %d시도%s%s%s"
+        yield _sse(_log("info", _L(uilang,
+            "▶ 벤치 · 공격자=%s · 타깃=%s · 목표 %d × 유닛 %d × %d회 = 총 %d시도%s%s%s",
+            "▶ Bench · attacker=%s · target=%s · %d obj × %d units × %d = %d attempts total%s%s%s")
                         % (atk_name, tgt_kind, len(objectives), len(units), trials, total,
                            " · " + "·".join(div) if div else "",
-                           " · Bio주입" if (base_persona and not persona_rotate) else "",
-                           " · 정찰ON" if run_recon else "")))
+                           _L(uilang, " · Bio주입", " · Bio") if (base_persona and not persona_rotate) else "",
+                           _L(uilang, " · 정찰ON", " · reconON") if run_recon else "")))
         if truncated:
-            yield _sse(_log("err", "  ⚠ 전략 조합이 30개를 초과해 상위 30개만 실행합니다(전략 선택을 줄이면 전수 가능)."))
+            yield _sse(_log("err", _L(uilang,
+                "  ⚠ 전략 조합이 30개를 초과해 상위 30개만 실행합니다(전략 선택을 줄이면 전수 가능).",
+                "  ⚠ Over 30 strategy combos — running the top 30 only (select fewer strategies for full).")))
         if atk_name == "claude":
-            yield _sse(_log("judge", "  ⚠ 공격자=Claude: 재밍 페이로드 생성을 거부할 수 있어 성공률이 낮게 나올 수 있음"))
+            yield _sse(_log("judge", _L(uilang,
+                "  ⚠ 공격자=Claude: 재밍 페이로드 생성을 거부할 수 있어 성공률이 낮게 나올 수 있음",
+                "  ⚠ attacker=Claude may refuse to generate jailbreak payloads (lower success)")))
 
         _prepare_defender()
         tgt = _active_target()
         judge = _active_judge()
         recon_ctx: Optional[str] = None
         if run_recon:
-            recon_ctx = yield from _recon_phase(tgt, jdg_backend, jdg_name, tgt_kind)
+            recon_ctx = yield from _recon_phase(tgt, jdg_backend, jdg_name, tgt_kind, lang=uilang)
 
         history: List[Dict[str, Any]] = []
         last_by: Dict[str, Dict[str, Any]] = {}   # (unitkey|obj) -> 직전 결과(refine용)
@@ -668,7 +679,7 @@ def api_attack_stream():
                         rkey = "%s|%s" % (ukey, oid)
                         try:
                             prev = last_by.get(rkey)
-                            gmode = "개선(refine)" if (prev and prev.get("agent_text")) else "생성(generate)"
+                            gmode = _L(uilang, "개선(refine)", "refine") if (prev and prev.get("agent_text")) else _L(uilang, "생성(generate)", "generate")
                             tag = "%s%s" % (oid or "-", "/%s" % lang if lang else "")
                             yield _sse(_log("gen", "[%d/%d] %s · %s · try%d · %s%s"
                                             % (idx, total, strat.name, tag, t + 1, gmode,
@@ -680,17 +691,17 @@ def api_attack_stream():
                                 gen = attacker.generate(obj, strat, recon_ctx, history,
                                                         temperature=temp, persona=persona, lang=lang)
                             pv = (gen.get("payload", "") or "").replace("\n", " ")[:90]
-                            yield _sse(_log("send", "  → [%s] 전송: %s" % (tgt_kind, pv)))
+                            yield _sse(_log("send", _L(uilang, "  → [%s] 전송: %s", "  → [%s] send: %s") % (tgt_kind, pv)))
                             resp = tgt.send(gen.get("payload", ""))
                             if resp.error:
-                                yield _sse(_log("err", "  ← 전송 오류: %s" % resp.error[:100]))
+                                yield _sse(_log("err", _L(uilang, "  ← 전송 오류: %s", "  ← send error: %s") % resp.error[:100]))
                             rv = (resp.agent_text or "").replace("\n", " ")[:90]
-                            yield _sse(_log("recv", "  ← 응답: %s" % rv))
-                            yield _sse(_log("judge", "  판정 중…"))
+                            yield _sse(_log("recv", _L(uilang, "  ← 응답: %s", "  ← reply: %s") % rv))
+                            yield _sse(_log("judge", _L(uilang, "  판정 중…", "  judging…")))
                             verdict = judge.judge(obj, resp)
                             lvl = "ok" if verdict["success"] else "bad"
                             yield _sse(_log(lvl, "  %s [%s] (%s, conf=%.2f) %s" % (
-                                "✔ 성공" if verdict["success"] else "✘ 실패",
+                                _L(uilang, "✔ 성공", "✔ SUCCESS") if verdict["success"] else _L(uilang, "✘ 실패", "✘ fail"),
                                 strat.name, verdict["source"], verdict["confidence"],
                                 (verdict.get("evidence") or "")[:70])))
                             rec = {
@@ -712,10 +723,10 @@ def api_attack_stream():
                             yield _sse(rec)
                         except Exception as e:  # noqa: BLE001
                             yield _sse({"type": "error", "strategy": ukey, "error": str(e)})
-                            yield _sse(_log("err", "  ⚠ 오류 [%s]: %s" % (ukey, str(e)[:100])))
+                            yield _sse(_log("err", _L(uilang, "  ⚠ 오류 [%s]: %s", "  ⚠ error [%s]: %s") % (ukey, str(e)[:100])))
                         time.sleep(0.2)
         succ = sum(1 for h in history if h.get("success"))
-        yield _sse(_log("info", "■ 완료 · 총 %d시도 · 성공 %d" % (len(history), succ)))
+        yield _sse(_log("info", _L(uilang, "■ 완료 · 총 %d시도 · 성공 %d", "■ Done · %d attempts · %d success") % (len(history), succ)))
         yield _sse({"type": "done"})
 
     return Response(stream(), mimetype="text/event-stream",
@@ -731,6 +742,11 @@ def _last_for(history: List[Dict[str, Any]], key: str) -> Optional[Dict[str, Any
 
 def _log(level: str, msg: str) -> Dict[str, Any]:
     return {"type": "log", "level": level, "msg": msg}
+
+
+def _L(lang: str, ko: str, en: str) -> str:
+    """스트리밍 로그 문자열 한/영 선택 (lang='en' 이면 영어)."""
+    return en if lang == "en" else ko
 
 
 def _sse(obj: Dict[str, Any]) -> str:
