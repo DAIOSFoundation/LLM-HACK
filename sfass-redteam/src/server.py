@@ -13,6 +13,7 @@ import itertools
 import json
 import os
 import sys
+import threading
 import time
 from typing import Any, Dict, List, Optional
 
@@ -583,27 +584,26 @@ def api_recon():
                     "transcript": transcript, "target_mode": STATE["mode"]})
 
 
-@app.route("/api/attack_stream")
-def api_attack_stream():
-    """SSE: 선택 전략들을 trials 회씩 목 에이전트에 시도하고 각 결과를 스트리밍.
-    프론트에서 전략별 성공률을 집계한다. recon=1 이면 벤치 전에 정찰을 실행해
-    유출 정보를 attacker 문맥으로 주입한다.
-    """
-    # 목표 스윕 (다중 선택 지원; 단일값 파라미터도 하위호환).
-    # 방어레벨 개념은 제거 — LLM 타깃은 STATE['system_prompt'](실타깃 에뮬레이션)로 동작.
-    objectives = [o for o in request.args.get("objectives", request.args.get("objective_id", "")).split(",") if o]
-    objectives = objectives or [None]
-    trials = int(request.args.get("trials", "2"))
-    keys = request.args.get("strategies", "")
-    run_recon = request.args.get("recon") in ("1", "true")
-    uilang = request.args.get("lang", "ko")   # UI 로그 언어(순환 언어 lang 과 구분)
-    strat_keys = [k for k in keys.split(",") if k] or [s.key for s in STRATEGIES]
-    # 다양화 옵션
-    fusion = int(request.args.get("fusion", "0") or "0")           # 0=끔, 2/3=전략 N개 조합
-    temp_sweep = request.args.get("temp_sweep") in ("1", "true")   # 온도 다양화
-    lang_rotate = request.args.get("lang_rotate") in ("1", "true")  # 언어 순환
-    persona_rotate = request.args.get("persona_rotate") in ("1", "true")  # 페르소나 순환
+def _bench_params(args) -> Dict[str, Any]:
+    """요청 인자에서 벤치 파라미터를 파싱(백그라운드 잡·직접 스트림 공용)."""
+    g = args.get
+    objectives = [o for o in (g("objectives") or g("objective_id") or "").split(",") if o] or [None]
+    strat_keys = [k for k in (g("strategies") or "").split(",") if k] or [s.key for s in STRATEGIES]
+    return {
+        "objectives": objectives, "trials": int(g("trials") or "2"), "strat_keys": strat_keys,
+        "run_recon": (g("recon") in ("1", "true")), "uilang": g("lang") or "ko",
+        "fusion": int((g("fusion") or "0") or "0"),
+        "temp_sweep": (g("temp_sweep") in ("1", "true")),
+        "lang_rotate": (g("lang_rotate") in ("1", "true")),
+        "persona_rotate": (g("persona_rotate") in ("1", "true")),
+    }
 
+
+def _bench_gen(p, job=None):
+    """벤치 이벤트 제너레이터 (SSE 문자열을 yield). job 이 주어지면 job['stop'] 로 중단 가능."""
+    objectives = p["objectives"]; trials = p["trials"]; strat_keys = p["strat_keys"]
+    run_recon = p["run_recon"]; uilang = p["uilang"]; fusion = p["fusion"]
+    temp_sweep = p["temp_sweep"]; lang_rotate = p["lang_rotate"]; persona_rotate = p["persona_rotate"]
     attacker = _attacker()
     base_persona = STATE.get("persona")
     mode = STATE["mode"]
@@ -612,125 +612,224 @@ def api_attack_stream():
     jdg_backend, jdg_name = _backend("judge")
     run_id = time.strftime("run_%Y%m%d_%H%M%S")
 
-    # 공격 단위(unit) = 전략 키 리스트. fusion 이면 조합, 아니면 단독.
     if fusion >= 2 and len(strat_keys) >= 2:
         n = min(fusion, len(strat_keys))
         units = [list(c) for c in itertools.combinations(strat_keys, n)]
-        combo_cap = 30
-        truncated = len(units) > combo_cap
-        units = units[:combo_cap]
+        truncated = len(units) > 30
+        units = units[:30]
     else:
         units = [[k] for k in strat_keys]
         truncated = False
 
     tgt_kind = ("HTTP " + STATE["target"].get("url", "")) if mode == "live" else ("LLM(%s)" % def_name)
 
-    def stream():
-        yield _sse({"type": "start", "objectives": objectives,
-                    "trials": trials, "strategies": strat_keys, "target_mode": mode,
-                    "recon": run_recon, "fusion": fusion, "units": len(units)})
-        div = []
-        if fusion >= 2:
-            div.append(_L(uilang, "전략조합=%d개씩(%d유닛)", "fusion=%d each(%d units)") % (fusion, len(units)))
-        if temp_sweep:
-            div.append(_L(uilang, "온도다양화", "temp-sweep"))
-        if lang_rotate:
-            div.append(_L(uilang, "언어순환", "lang-rotate"))
-        if persona_rotate:
-            div.append(_L(uilang, "페르소나순환", "persona-rotate"))
-        total = len(objectives) * len(units) * trials
-        yield _sse(_log("info", _L(uilang,
-            "▶ 벤치 · 공격자=%s · 타깃=%s · 목표 %d × 유닛 %d × %d회 = 총 %d시도%s%s%s",
-            "▶ Bench · attacker=%s · target=%s · %d obj × %d units × %d = %d attempts total%s%s%s")
-                        % (atk_name, tgt_kind, len(objectives), len(units), trials, total,
-                           " · " + "·".join(div) if div else "",
-                           _L(uilang, " · Bio주입", " · Bio") if (base_persona and not persona_rotate) else "",
-                           _L(uilang, " · 정찰ON", " · reconON") if run_recon else "")))
-        if truncated:
-            yield _sse(_log("err", _L(uilang,
-                "  ⚠ 전략 조합이 30개를 초과해 상위 30개만 실행합니다(전략 선택을 줄이면 전수 가능).",
-                "  ⚠ Over 30 strategy combos — running the top 30 only (select fewer strategies for full).")))
-        if atk_name == "claude":
-            yield _sse(_log("judge", _L(uilang,
-                "  ⚠ 공격자=Claude: 재밍 페이로드 생성을 거부할 수 있어 성공률이 낮게 나올 수 있음",
-                "  ⚠ attacker=Claude may refuse to generate jailbreak payloads (lower success)")))
+    yield _sse({"type": "start", "objectives": objectives,
+                "trials": trials, "strategies": strat_keys, "target_mode": mode,
+                "recon": run_recon, "fusion": fusion, "units": len(units)})
+    div = []
+    if fusion >= 2:
+        div.append(_L(uilang, "전략조합=%d개씩(%d유닛)", "fusion=%d each(%d units)") % (fusion, len(units)))
+    if temp_sweep:
+        div.append(_L(uilang, "온도다양화", "temp-sweep"))
+    if lang_rotate:
+        div.append(_L(uilang, "언어순환", "lang-rotate"))
+    if persona_rotate:
+        div.append(_L(uilang, "페르소나순환", "persona-rotate"))
+    total = len(objectives) * len(units) * trials
+    yield _sse(_log("info", _L(uilang,
+        "▶ 벤치 · 공격자=%s · 타깃=%s · 목표 %d × 유닛 %d × %d회 = 총 %d시도%s%s%s",
+        "▶ Bench · attacker=%s · target=%s · %d obj × %d units × %d = %d attempts total%s%s%s")
+                    % (atk_name, tgt_kind, len(objectives), len(units), trials, total,
+                       " · " + "·".join(div) if div else "",
+                       _L(uilang, " · Bio주입", " · Bio") if (base_persona and not persona_rotate) else "",
+                       _L(uilang, " · 정찰ON", " · reconON") if run_recon else "")))
+    if truncated:
+        yield _sse(_log("err", _L(uilang,
+            "  ⚠ 전략 조합이 30개를 초과해 상위 30개만 실행합니다(전략 선택을 줄이면 전수 가능).",
+            "  ⚠ Over 30 strategy combos — running the top 30 only (select fewer strategies for full).")))
+    if atk_name == "claude":
+        yield _sse(_log("judge", _L(uilang,
+            "  ⚠ 공격자=Claude: 재밍 페이로드 생성을 거부할 수 있어 성공률이 낮게 나올 수 있음",
+            "  ⚠ attacker=Claude may refuse to generate jailbreak payloads (lower success)")))
 
-        _prepare_defender()
-        tgt = _active_target()
-        judge = _active_judge()
-        recon_ctx: Optional[str] = None
-        if run_recon:
-            recon_ctx = yield from _recon_phase(tgt, jdg_backend, jdg_name, tgt_kind, lang=uilang)
+    _prepare_defender()
+    tgt = _active_target()
+    judge = _active_judge()
+    recon_ctx: Optional[str] = None
+    if run_recon:
+        recon_ctx = yield from _recon_phase(tgt, jdg_backend, jdg_name, tgt_kind, lang=uilang)
 
-        history: List[Dict[str, Any]] = []
-        last_by: Dict[str, Dict[str, Any]] = {}   # (unitkey|obj) -> 직전 결과(refine용)
-        TEMPS = [0.7, 1.0, 1.3]
-        idx = 0
-        for oid in objectives:
-            obj = _obj(oid) if oid else None
-            for unit in units:
-                    strat = combine_strategies(unit)
-                    ukey = strat.key
-                    for t in range(trials):
-                        idx += 1
-                        temp = TEMPS[t % len(TEMPS)] if temp_sweep else None
-                        lang = LANGS[idx % len(LANGS)] if lang_rotate else None
-                        persona = POOL_PERSONAS[idx % len(POOL_PERSONAS)] if persona_rotate else base_persona
-                        rkey = "%s|%s" % (ukey, oid)
-                        try:
-                            prev = last_by.get(rkey)
-                            gmode = _L(uilang, "개선(refine)", "refine") if (prev and prev.get("agent_text")) else _L(uilang, "생성(generate)", "generate")
-                            tag = "%s%s" % (oid or "-", "/%s" % lang if lang else "")
-                            yield _sse(_log("gen", "[%d/%d] %s · %s · try%d · %s%s"
-                                            % (idx, total, strat.name, tag, t + 1, gmode,
-                                               " · T%.1f" % temp if temp else "")))
-                            if prev and prev.get("agent_text"):
-                                gen = attacker.refine(obj, strat, prev["payload"],
-                                                      prev["agent_text"], recon_ctx, history, persona=persona)
-                            else:
-                                gen = attacker.generate(obj, strat, recon_ctx, history,
-                                                        temperature=temp, persona=persona, lang=lang)
-                            pv = (gen.get("payload", "") or "").replace("\n", " ")[:90]
-                            yield _sse(_log("send", _L(uilang, "  → [%s] 전송: %s", "  → [%s] send: %s") % (tgt_kind, pv)))
-                            resp = tgt.send(gen.get("payload", ""))
-                            if resp.error:
-                                yield _sse(_log("err", _L(uilang, "  ← 전송 오류: %s", "  ← send error: %s") % resp.error[:100]))
-                            rv = (resp.agent_text or "").replace("\n", " ")[:90]
-                            yield _sse(_log("recv", _L(uilang, "  ← 응답: %s", "  ← reply: %s") % rv))
-                            yield _sse(_log("judge", _L(uilang, "  판정 중…", "  judging…")))
-                            verdict = judge.judge(obj, resp)
-                            lvl = "ok" if verdict["success"] else "bad"
-                            yield _sse(_log(lvl, "  %s [%s] (%s, conf=%.2f) %s" % (
-                                _L(uilang, "✔ 성공", "✔ SUCCESS") if verdict["success"] else _L(uilang, "✘ 실패", "✘ fail"),
-                                strat.name, verdict["source"], verdict["confidence"],
-                                (verdict.get("evidence") or "")[:70])))
-                            rec = {
-                                "type": "attempt", "strategy": ukey, "strategy_name": strat.name,
-                                "strategy_angle": strat.angle, "objective": oid, "defense_level": "",
-                                "risk": strat.risk, "summary": strat.summary,
-                                "lang": lang, "temperature": temp,
-                                "rationale": gen.get("rationale") or gen.get("change"),
-                                "trial": t + 1, "payload": gen.get("payload", ""),
-                                "agent_text": resp.agent_text, "action": resp.action,
-                                "success": verdict["success"], "source": verdict["source"],
-                                "confidence": verdict["confidence"], "evidence": verdict["evidence"],
-                            }
-                            history.append(rec)
-                            last_by[rkey] = rec
-                            store.record_attempt({**rec, "run_id": run_id, "mode": mode,
-                                                  "attacker_backend": atk_name, "defender_backend": def_name,
-                                                  "recon_used": run_recon, "persona_used": bool(persona)})
-                            yield _sse(rec)
-                        except Exception as e:  # noqa: BLE001
-                            yield _sse({"type": "error", "strategy": ukey, "error": str(e)})
-                            yield _sse(_log("err", _L(uilang, "  ⚠ 오류 [%s]: %s", "  ⚠ error [%s]: %s") % (ukey, str(e)[:100])))
-                        time.sleep(0.2)
-        succ = sum(1 for h in history if h.get("success"))
+    history: List[Dict[str, Any]] = []
+    last_by: Dict[str, Dict[str, Any]] = {}
+    TEMPS = [0.7, 1.0, 1.3]
+    idx = 0
+    stopped = False
+    for oid in objectives:
+        if stopped:
+            break
+        obj = _obj(oid) if oid else None
+        for unit in units:
+            if stopped:
+                break
+            strat = combine_strategies(unit)
+            ukey = strat.key
+            for t in range(trials):
+                if job is not None and job.get("stop"):
+                    stopped = True
+                    break
+                idx += 1
+                temp = TEMPS[t % len(TEMPS)] if temp_sweep else None
+                lang = LANGS[idx % len(LANGS)] if lang_rotate else None
+                persona = POOL_PERSONAS[idx % len(POOL_PERSONAS)] if persona_rotate else base_persona
+                rkey = "%s|%s" % (ukey, oid)
+                try:
+                    prev = last_by.get(rkey)
+                    gmode = _L(uilang, "개선(refine)", "refine") if (prev and prev.get("agent_text")) else _L(uilang, "생성(generate)", "generate")
+                    tag = "%s%s" % (oid or "-", "/%s" % lang if lang else "")
+                    yield _sse(_log("gen", "[%d/%d] %s · %s · try%d · %s%s"
+                                    % (idx, total, strat.name, tag, t + 1, gmode,
+                                       " · T%.1f" % temp if temp else "")))
+                    if prev and prev.get("agent_text"):
+                        gen = attacker.refine(obj, strat, prev["payload"],
+                                              prev["agent_text"], recon_ctx, history, persona=persona)
+                    else:
+                        gen = attacker.generate(obj, strat, recon_ctx, history,
+                                                temperature=temp, persona=persona, lang=lang)
+                    pv = (gen.get("payload", "") or "").replace("\n", " ")[:90]
+                    yield _sse(_log("send", _L(uilang, "  → [%s] 전송: %s", "  → [%s] send: %s") % (tgt_kind, pv)))
+                    resp = tgt.send(gen.get("payload", ""))
+                    if resp.error:
+                        yield _sse(_log("err", _L(uilang, "  ← 전송 오류: %s", "  ← send error: %s") % resp.error[:100]))
+                    rv = (resp.agent_text or "").replace("\n", " ")[:90]
+                    yield _sse(_log("recv", _L(uilang, "  ← 응답: %s", "  ← reply: %s") % rv))
+                    yield _sse(_log("judge", _L(uilang, "  판정 중…", "  judging…")))
+                    verdict = judge.judge(obj, resp)
+                    lvl = "ok" if verdict["success"] else "bad"
+                    yield _sse(_log(lvl, "  %s [%s] (%s, conf=%.2f) %s" % (
+                        _L(uilang, "✔ 성공", "✔ SUCCESS") if verdict["success"] else _L(uilang, "✘ 실패", "✘ fail"),
+                        strat.name, verdict["source"], verdict["confidence"],
+                        (verdict.get("evidence") or "")[:70])))
+                    rec = {
+                        "type": "attempt", "strategy": ukey, "strategy_name": strat.name,
+                        "strategy_angle": strat.angle, "objective": oid, "defense_level": "",
+                        "risk": strat.risk, "summary": strat.summary,
+                        "lang": lang, "temperature": temp,
+                        "rationale": gen.get("rationale") or gen.get("change"),
+                        "trial": t + 1, "payload": gen.get("payload", ""),
+                        "agent_text": resp.agent_text, "action": resp.action,
+                        "success": verdict["success"], "source": verdict["source"],
+                        "confidence": verdict["confidence"], "evidence": verdict["evidence"],
+                    }
+                    history.append(rec)
+                    last_by[rkey] = rec
+                    store.record_attempt({**rec, "run_id": run_id, "mode": mode,
+                                          "attacker_backend": atk_name, "defender_backend": def_name,
+                                          "recon_used": run_recon, "persona_used": bool(persona)})
+                    yield _sse(rec)
+                except Exception as e:  # noqa: BLE001
+                    yield _sse({"type": "error", "strategy": ukey, "error": str(e)})
+                    yield _sse(_log("err", _L(uilang, "  ⚠ 오류 [%s]: %s", "  ⚠ error [%s]: %s") % (ukey, str(e)[:100])))
+                time.sleep(0.2)
+    succ = sum(1 for h in history if h.get("success"))
+    if stopped:
+        yield _sse(_log("info", _L(uilang, "■ 정지됨 · 총 %d시도 · 성공 %d", "■ Stopped · %d attempts · %d success") % (len(history), succ)))
+    else:
         yield _sse(_log("info", _L(uilang, "■ 완료 · 총 %d시도 · 성공 %d", "■ Done · %d attempts · %d success") % (len(history), succ)))
-        yield _sse({"type": "done"})
+    yield _sse({"type": "done"})
+
+
+@app.route("/api/attack_stream")
+def api_attack_stream():
+    """SSE 직접 스트림(하위호환). 백그라운드 지속이 필요하면 /api/bench/start 사용."""
+    p = _bench_params(request.args)
+
+    def stream():
+        yield from _bench_gen(p)
 
     return Response(stream(), mimetype="text/event-stream",
                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# --- 백그라운드 벤치 잡 (페이지 새로고침에도 서버에서 계속 실행) ------------
+BENCH_JOBS: Dict[str, Dict[str, Any]] = {}
+BENCH_LOCK = threading.Lock()
+
+
+def _run_bench(job: Dict[str, Any]) -> None:
+    """백그라운드 스레드: 벤치 이벤트를 job['events'] 버퍼에 축적."""
+    try:
+        for chunk in _bench_gen(job["params"], job):
+            job["events"].append(chunk)
+    except Exception as e:  # noqa: BLE001
+        job["events"].append(_sse(_log("err", "bench error: %s" % str(e)[:200])))
+        job["events"].append(_sse({"type": "done"}))
+    job["status"] = "done"
+
+
+@app.route("/api/bench/start", methods=["POST"])
+def api_bench_start():
+    """벤치를 백그라운드 잡으로 시작. job_id 반환 → /api/bench/stream 으로 이어받기."""
+    p = _bench_params(request.args)
+    with BENCH_LOCK:
+        for j in BENCH_JOBS.values():          # 진행 중 잡이 있으면 정지
+            if j["status"] == "running":
+                j["stop"] = True
+        jid = time.strftime("job_%Y%m%d_%H%M%S")
+        if jid in BENCH_JOBS:
+            jid += "_%d" % len(BENCH_JOBS)
+        job = {"id": jid, "params": p, "events": [], "status": "running",
+               "stop": False, "started": time.time()}
+        BENCH_JOBS[jid] = job
+        for old in sorted(BENCH_JOBS.values(), key=lambda x: x["started"])[:-6]:
+            BENCH_JOBS.pop(old["id"], None)     # 오래된 잡 정리(최근 6개 유지)
+    threading.Thread(target=_run_bench, args=(job,), daemon=True).start()
+    return jsonify({"job_id": jid})
+
+
+@app.route("/api/bench/stream")
+def api_bench_stream():
+    """잡 이벤트 버퍼를 from 인덱스부터 스트리밍(라이브 tail). 새로고침 후 이어받기용."""
+    jid = request.args.get("job_id")
+    start_idx = int(request.args.get("from", "0"))
+    job = BENCH_JOBS.get(jid)
+
+    def stream():
+        if not job:
+            yield _sse({"type": "error", "error": "no such job"})
+            yield _sse({"type": "done"})
+            return
+        i = start_idx
+        while True:
+            evs = job["events"]
+            while i < len(evs):
+                yield evs[i]
+                i += 1
+            if job["status"] == "done" and i >= len(job["events"]):
+                break
+            time.sleep(0.25)
+
+    return Response(stream(), mimetype="text/event-stream",
+                    headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@app.route("/api/bench/status")
+def api_bench_status():
+    """진행 중 잡이 있으면 job_id 반환(페이지 로드 시 이어받기 판단용)."""
+    with BENCH_LOCK:
+        running = [j for j in BENCH_JOBS.values() if j["status"] == "running"]
+    if running:
+        j = sorted(running, key=lambda x: x["started"])[-1]
+        return jsonify({"running": True, "job_id": j["id"], "events": len(j["events"])})
+    return jsonify({"running": False})
+
+
+@app.route("/api/bench/stop", methods=["POST"])
+def api_bench_stop():
+    jid = (request.get_json(silent=True) or {}).get("job_id") or request.args.get("job_id")
+    j = BENCH_JOBS.get(jid)
+    if j:
+        j["stop"] = True
+    return jsonify({"ok": bool(j)})
 
 
 def _last_for(history: List[Dict[str, Any]], key: str) -> Optional[Dict[str, Any]]:

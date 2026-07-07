@@ -44,7 +44,7 @@
   button.ghost{background:var(--chip);color:var(--txt);border:1px solid var(--border)}
   button:disabled{opacity:.5;cursor:not-allowed}
   .grid2{display:grid;grid-template-columns:340px 1fr;gap:14px}
-  .gridA{display:grid;grid-template-columns:340px minmax(0,1fr) minmax(0,1.2fr);gap:14px;align-items:start}
+  .gridA{display:grid;grid-template-columns:340px minmax(0,2fr) minmax(0,1fr);gap:14px;align-items:start}
   @media(max-width:1200px){.gridA{grid-template-columns:1fr}}
   /* 2열: 전략별 성공률(상한 스크롤) 위 + 실시간 로그(남은 공간 채움) 아래 */
   .acol{display:flex;flex-direction:column;gap:14px;height:calc(100vh - 92px)}
@@ -433,6 +433,9 @@ const I18N_EN={
  "요약설명":"Summary","페이로드":"Payload","판정 근거":"Verdict basis","노림수":"Angle","구성":"Config","전략 구성(각도)":"Strategy angle","페이로드 (에이전트로 전송)":"Payload (sent to agent)",
  "🔍 정찰 결과 (내부지식 유출 요약)":"🔍 Recon (leaked-knowledge summary)","이후 전 시도에 주입됨":"injected into all attempts",
  "역할 저장됨":"Roles saved","추가됨":"Added","저장됨":"Saved",
+ "벤치를 실행하면 생성→전송→응답→판정 과정이 실시간으로 흐릅니다.":"Running the bench streams generate→send→reply→judge in real time.",
+ "각 시도의 전략 구성·페이로드·응답·판정 근거를 카드로 펼쳐볼 수 있습니다.":"Expand each attempt's strategy, payload, response, and verdict basis as a card.",
+ "결과가 여기 표시됩니다.":"Result appears here.","응답이 여기 표시됩니다.":"Response appears here.",
  "타깃: LLM":"Target: LLM","타깃: HTTP":"Target: HTTP",
  "(여러 개 = 스윕)":"(multiple = sweep)","(다양한 공격 구성 자동 공략)":"(auto-explore diverse configs)","(0.7·1.0·1.3 순환)":"(rotate 0.7·1.0·1.3)","(한·영·중·일)":"(ko·en·zh·ja)","(커버스토리 4종)":"(4 cover stories)","선택 전략을 N개씩 한 페이로드로":"fuse N selected strategies per payload",
  "전략 선택":"Strategy select","🔍 공격 전 정찰 실행 (유출 정보 → 전 전략에 주입)":"🔍 Recon before attack (leaked info → all strategies)",
@@ -537,7 +540,7 @@ document.addEventListener('click',e=>{
   if(e.target.id==='a-reco'){e.preventDefault();setSel(v=>RECO.includes(v));}
   if(e.target.id==='a-clear'){e.preventDefault();$('#a-console').innerHTML='';}
 });
-boot();
+boot().then(()=>{ try{resumeBench();}catch(_){}});
 
 // ---------- 타깃 엔드포인트 설정 (⚙ 설정 탭) ----------
 let TGT_MODE='mock', TGT_INFO='';
@@ -722,7 +725,7 @@ function logLine(level,msg){
 }
 
 // ---------- 공격/벤치 (SSE) ----------
-let ES=null, stats={};
+let ES=null, stats={}, CURRENT_JOB=null, benchIdx=0, benchActive=false;
 function rateRow(k){const s=stats[k]||{n:0,ok:0};const p=s.n?Math.round(s.ok/s.n*100):0;
   const x=RISK[s.risk]||RISK.med;const name=s.name||(META.strategies.find(t=>t.key===k)||{}).name||k;
   return `<tr><td title="위험도 ${x.t}">${x.i} ${esc(name)}</td><td>${s.ok}/${s.n} <b style="color:${p>=50?'var(--ok)':p>0?'var(--warn)':'var(--muted)'}">${p}%</b></td>
@@ -790,48 +793,70 @@ function reconCard(r){
   div.querySelector('.head').onclick=()=>div.classList.toggle('open');
   return div;
 }
-$('#a-run').onclick=()=>{
-  const objs=selObjs(), trials=$('#a-trials').value;
-  const keys=$$('.stratcb').filter(c=>c.checked).map(c=>c.value);
-  if(!objs.length){alert('목표를 1개 이상 선택하세요');return;}
-  if(!keys.length){alert('전략을 1개 이상 선택하세요');return;}
-  const fusion=$('#a-fusion').value;
-  if(+fusion>=2 && keys.length<+fusion){alert(`전략 조합 ${fusion}개 융합에는 전략을 ${fusion}개 이상 선택하세요`);return;}
-  stats={};$('#a-log').innerHTML='';$('#a-count').textContent='';$('#a-console').innerHTML='';renderRates();
-  const p=new URLSearchParams({objectives:objs.join(','),
-    trials,strategies:keys.join(','),fusion,lang:LANG});
-  if($('#a-recon').checked)p.set('recon','1');
-  if($('#a-temp').checked)p.set('temp_sweep','1');
-  if($('#a-lang').checked)p.set('lang_rotate','1');
-  if($('#a-persona').checked)p.set('persona_rotate','1');
-  const url='/api/attack_stream?'+p.toString();
-  ES=new EventSource(url);
+let benchN=0;
+function openBench(jobId, fromIdx){
+  CURRENT_JOB=jobId; benchActive=true; benchIdx=fromIdx;
+  if(fromIdx===0){ stats={};benchN=0;$('#a-log').innerHTML='';$('#a-count').textContent='';$('#a-console').innerHTML='';renderRates(); }
   $('#a-run').disabled=true;$('#a-stop').disabled=false;
-  $('#a-status').innerHTML='<span class="spin"></span> 실행 중…';
+  $('#a-status').innerHTML='<span class="spin"></span> '+L('실행 중…','running…')+(fromIdx>0?' '+L('(이어받음)','(resumed)'):'');
   $('#a-livestat').innerHTML='<span class="spin"></span>';
-  let n=0;
+  if(ES){ES.close();}
+  ES=new EventSource(`/api/bench/stream?job_id=${encodeURIComponent(jobId)}&from=${fromIdx}`);
   ES.onmessage=e=>{
+    benchIdx++;
     const r=JSON.parse(e.data);
-    if(r.type==='log'){
-      logLine(r.level,r.msg);
+    if(r.type==='log'){ logLine(r.level,r.msg);
     }else if(r.type==='attempt'){
-      n++;$('#a-count').textContent=`(${n})`;
+      benchN++;$('#a-count').textContent=`(${benchN})`;
       stats[r.strategy]=stats[r.strategy]||{n:0,ok:0};
       stats[r.strategy].n++; if(r.success)stats[r.strategy].ok++;
       stats[r.strategy].name=r.strategy_name; stats[r.strategy].risk=r.risk;
       r._ts=nowStr();
       $('#a-log').prepend(tryCard(r));renderRates();
-    }else if(r.type==='recon'){
-      $('#a-log').prepend(reconCard(r));
-    }else if(r.type==='error'){
-      logLine('err',`⚠ ${r.strategy}: ${r.error}`);
-    }else if(r.type==='done'){stop();}
+    }else if(r.type==='recon'){ $('#a-log').prepend(reconCard(r));
+    }else if(r.type==='error'){ logLine('err',`⚠ ${r.strategy||''}: ${r.error}`);
+    }else if(r.type==='done'){ finishBench(); }
   };
-  ES.onerror=()=>{logLine('err','연결 종료');stop();};
+  ES.onerror=()=>{
+    if(ES){ES.close();ES=null;}
+    if(!benchActive)return;
+    // 연결 끊김(새로고침 아님) — 서버 잡이 계속 도는지 확인 후 이어받기
+    setTimeout(async()=>{
+      if(!benchActive)return;
+      try{ const s=await (await fetch('/api/bench/status')).json();
+        if(s.running && s.job_id===CURRENT_JOB){ openBench(CURRENT_JOB, benchIdx); }
+        else finishBench();
+      }catch(_){ finishBench(); }
+    }, 1200);
+  };
+}
+$('#a-run').onclick=async()=>{
+  const objs=selObjs(), trials=$('#a-trials').value;
+  const keys=$$('.stratcb').filter(c=>c.checked).map(c=>c.value);
+  if(!objs.length){alert(L('목표를 1개 이상 선택하세요','Select at least one objective'));return;}
+  if(!keys.length){alert(L('전략을 1개 이상 선택하세요','Select at least one strategy'));return;}
+  const fusion=$('#a-fusion').value;
+  if(+fusion>=2 && keys.length<+fusion){alert(L(`전략 조합 ${fusion}개 융합에는 전략을 ${fusion}개 이상 선택하세요`,`Fusion of ${fusion} needs ≥${fusion} strategies`));return;}
+  const p=new URLSearchParams({objectives:objs.join(','),trials,strategies:keys.join(','),fusion,lang:LANG});
+  if($('#a-recon').checked)p.set('recon','1');
+  if($('#a-temp').checked)p.set('temp_sweep','1');
+  if($('#a-lang').checked)p.set('lang_rotate','1');
+  if($('#a-persona').checked)p.set('persona_rotate','1');
+  $('#a-run').disabled=true;
+  const r=await (await fetch('/api/bench/start?'+p.toString(),{method:'POST'})).json();
+  openBench(r.job_id, 0);
 };
-function stop(){if(ES){ES.close();ES=null;}$('#a-run').disabled=false;$('#a-stop').disabled=true;
-  $('#a-status').textContent='완료';$('#a-livestat').textContent='';}
-$('#a-stop').onclick=stop;
+function finishBench(){ benchActive=false; if(ES){ES.close();ES=null;}
+  $('#a-run').disabled=false;$('#a-stop').disabled=true;
+  $('#a-status').textContent=L('완료','done');$('#a-livestat').textContent=''; }
+$('#a-stop').onclick=async()=>{ benchActive=false;
+  if(CURRENT_JOB){try{await fetch('/api/bench/stop',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job_id:CURRENT_JOB})});}catch(_){}}
+  finishBench(); };
+// 페이지 로드 시 진행 중 벤치 있으면 이어받기
+async function resumeBench(){
+  try{ const s=await (await fetch('/api/bench/status')).json();
+    if(s.running){ switchView('attack'); openBench(s.job_id, 0); } }catch(_){}
+}
 
 // ---------- 방어 테스트 ----------
 $('#d-send').onclick=async()=>{
