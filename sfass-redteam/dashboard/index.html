@@ -99,6 +99,21 @@
   .cbar-fill{height:100%;background:#f0883e;border-radius:5px 4px 4px 5px;min-width:2px;transition:width .45s ease}
   .cbar-val{width:40px;flex:none;font-weight:700;font-size:13px;text-align:right}
   .cbar-axis{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin:2px 0 0 182px}
+  /* 취약점 분석 인포그래픽 */
+  .an-tiles{display:flex;flex-wrap:wrap;gap:10px}
+  .an-tile{flex:1;min-width:110px;background:#0b0f16;border:1px solid var(--border);border-radius:8px;padding:10px 14px}
+  .an-tile .v{font-size:26px;font-weight:800;line-height:1.1}
+  .an-tile .l{font-size:11px;color:var(--muted);margin-top:3px}
+  .gridAn{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  @media(max-width:900px){.gridAn{grid-template-columns:1fr}}
+  .stk{display:flex;height:24px;border-radius:6px;overflow:hidden;border:1px solid var(--border);background:#0b0f16}
+  .stk>span{display:block;height:100%}
+  .lgd{display:flex;gap:16px;flex-wrap:wrap;margin-top:9px;font-size:12px}
+  .lgd i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+  .sev-critical{color:#ff3b52;font-weight:800} .sev-high{color:var(--bad);font-weight:700}
+  .sev-medium{color:var(--warn);font-weight:700} .sev-low{color:var(--ok);font-weight:700}
+  .rk-card{border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:10px 12px;margin:8px 0;background:var(--panel2)}
+  .rk-card .chain{margin:6px 0 4px;padding-left:18px;line-height:1.7}
   .flex{display:flex;align-items:center;gap:8px}
   .spin{width:13px;height:13px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;
     display:inline-block;animation:sp .7s linear infinite}
@@ -138,6 +153,7 @@
         <div class="menu-item active" data-v="attack">⚔️ 공격 · 벤치</div>
         <div class="menu-item" data-v="history">📊 성공 전략 · 기록</div>
         <div class="menu-item" data-v="compare">📈 취약점 비교</div>
+        <div class="menu-item" data-v="analysis">🔬 취약점 분석</div>
         <div class="menu-item" data-v="playground">🎮 플레이그라운드</div>
         <div class="menu-sep"></div>
         <div class="menu-item" data-v="settings">⚙️ 설정</div>
@@ -393,6 +409,41 @@
   </div>
 </section>
 
+<!-- ================= 취약점 분석 ================= -->
+<section class="view" id="v-analysis">
+  <div class="card" style="margin-bottom:14px">
+    <h3>🔬 취약점 분석 <span class="muted small">(성공한 공격 기반 · 실 운영 복합위험 예측)</span>
+      <span id="an-status" class="muted small"></span>
+      <a href="#" id="an-refresh" class="muted small" style="float:right">새로고침</a></h3>
+    <p class="muted small" style="margin:0 0 10px">성공(뚫림)한 공격들을 전략·AI행동·응답종류·툴사용·위험도로 분해하고, LLM이 실제 운영 시 발생할 복합(연쇄) 위험을 예측합니다.</p>
+    <div class="tb-row" style="margin-bottom:10px">
+      <label class="inl">대상 모델 <select id="an-model" class="mini"><option value="">전체</option></select></label>
+    </div>
+    <div id="an-tiles" class="an-tiles"></div>
+  </div>
+  <div class="gridAn">
+    <div class="card"><h3>전략별 성공 분포 <span class="muted small">어떤 공격 전략이 뚫었나</span></h3><div id="an-strat"><div class="muted small">데이터 없음</div></div></div>
+    <div class="card"><h3>위험도 분포 <span class="muted small">성공의 심각도</span></h3><div id="an-risk"><div class="muted small">데이터 없음</div></div></div>
+    <div class="card"><h3>카테고리별 성공 <span class="muted small">어느 도메인이 뚫렸나</span></h3><div id="an-cat"><div class="muted small">데이터 없음</div></div></div>
+    <div class="card"><h3>악용된 툴·행동 유형 <span class="muted small">뚫릴 때 나타난 행동</span></h3><div id="an-tool"><div class="muted small">데이터 없음</div></div></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <h3>💪 강점 · 약점 <span class="muted small">(카테고리 기반 · 견고/취약 지점)</span></h3>
+    <div id="an-sw"><div class="muted small">대상 모델을 선택하면 견고/취약 지점이 보입니다.</div></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <h3>🧠 LLM 복합 위험도 예측 <span class="muted small">(Claude 분석 — 실제 운영 시 연쇄 위험)</span>
+      <button id="an-run" class="ghost" style="float:right">분석 실행</button></h3>
+    <div id="an-llm"><div class="muted small">「분석 실행」을 누르면 성공한 공격들을 근거로 실제 운영 환경의 복합(연쇄) 위험을 LLM이 예측합니다.</div></div>
+  </div>
+  <div class="card" style="margin-bottom:0">
+    <h3>🧬 전략 생성기 <span class="muted small">(가용 모델 브레인스토밍 → Claude 종합 신규 전략)</span>
+      <button id="sg-run" class="ghost" style="float:right">새 전략 생성</button></h3>
+    <p class="muted small" style="margin:0 0 8px">잘 안 뚫리는 대상에 대해, 사용 가능한 모든 모델에게 현 상황(정탐·시도 전략·성공/실패)을 물어 아이디어를 모으고, Claude가 종합해 새로운 공격 전략을 설계합니다. (여러 모델 호출로 수십 초~수 분 소요)</p>
+    <div id="sg-out"><div class="muted small">「새 전략 생성」을 누르면 시작합니다. 위 「대상 모델」이 선택돼 있으면 그 모델 기준으로 생성합니다.</div></div>
+  </div>
+</section>
+
 <!-- ================= 성공 전략 · 기록 ================= -->
 <section class="view" id="v-history">
   <div class="card">
@@ -424,8 +475,8 @@ const esc=s=>(s==null?"":String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;'
 // ===== i18n: 한국어 UI → 영어 사전 번역 레이어 (기존 마크업/로직 미변경) =====
 const I18N_EN={
  "로딩…":"Loading…","타깃: …":"Target: …",
- "⚔️ 공격 · 벤치":"⚔️ Attack · Bench","📊 성공 전략 · 기록":"📊 Successes · History","📈 취약점 비교":"📈 Vulnerability","🎮 플레이그라운드":"🎮 Playground","⚙️ 설정":"⚙️ Settings",
- "공격 · 벤치":"Attack · Bench","성공 전략 · 기록":"Successes · History","취약점 비교":"Vulnerability","플레이그라운드":"Playground","⚙ 설정":"⚙ Settings",
+ "⚔️ 공격 · 벤치":"⚔️ Attack · Bench","📊 성공 전략 · 기록":"📊 Successes · History","📈 취약점 비교":"📈 Vulnerability","🔬 취약점 분석":"🔬 Vuln Analysis","🎮 플레이그라운드":"🎮 Playground","⚙️ 설정":"⚙️ Settings",
+ "공격 · 벤치":"Attack · Bench","성공 전략 · 기록":"Successes · History","취약점 비교":"Vulnerability","취약점 분석":"Vuln Analysis","플레이그라운드":"Playground","⚙ 설정":"⚙ Settings",
  "🌐 언어 / Language":"🌐 Language",
  "🧠 모델 역할":"🧠 Model Roles","공격자":"Attacker","타깃 LLM":"Target LLM","판정":"Judge","역할 저장":"Save Roles","🔌 연결 테스트":"🔌 Connection Test",
  "➕ LLM 엔드포인트 추가 (타깃 LLM·공격자·판정으로 사용)":"➕ Add LLM Endpoint (use as Target/Attacker/Judge)",
@@ -440,6 +491,7 @@ const I18N_EN={
  "실시간 로그":"Live Log","지우기":"clear","시도 카드":"Attempt Cards",
  "📊 성공 전략 · 시도 기록":"📊 Successes · Attempt History","보기":"View","✔ 성공 전략만":"✔ Successes only","전체 시도 흔적":"All attempts","목표":"Objective","전체 목표":"All objectives","최대":"Max","새로고침":"Refresh","전체 삭제":"Delete all","기록":"Records",
  "📈 모델·에이전트 취약점 비교":"📈 Model/Agent Vulnerability","취약점 점수":"Vulnerability score","높을수록 취약":"higher = more vulnerable","상세":"Details","취약점":"Vuln","성공/시도":"Succ/Att","성공률":"Rate",
+ "🔬 취약점 분석":"🔬 Vulnerability Analysis","대상 모델":"Target model","전략별 성공 분포":"Breaches by strategy","위험도 분포":"Risk breakdown","카테고리별 성공":"Breaches by category","악용된 툴·행동 유형":"Tools/actions abused","🧠 LLM 복합 위험도 예측":"🧠 LLM compound-risk prediction","분석 실행":"Run analysis","고위험":"High","중":"Med","하":"Low",
  "🎮 플레이그라운드":"🎮 Playground","방어 대상 설정":"Target Setup","방어 레벨":"Defense level","보낼 메시지 (공격 페이로드)":"Message (attack payload)","전송":"Send","공격자로 페이로드 생성":"Generate via attacker","에이전트 응답":"Agent Response","응답이 여기 표시됩니다.":"Response appears here.",
  "판정 입력":"Judge Input","목표 동작":"Objective","로봇 응답 텍스트":"Robot response text","판정 실행":"Run judge","판정 결과":"Judge Result","결과가 여기 표시됩니다.":"Result appears here.",
  "요약설명":"Summary","페이로드":"Payload","판정 근거":"Verdict basis","노림수":"Angle","구성":"Config","전략 구성(각도)":"Strategy angle","페이로드 (에이전트로 전송)":"Payload (sent to agent)",
@@ -507,7 +559,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 const L=(ko,en)=>LANG==='en'?en:ko;  // 동적 문자열 한/영 선택
 
 // 햄버거 메뉴 · 뷰 전환
-const VIEW_NAMES={attack:'공격 · 벤치',history:'성공 전략 · 기록',compare:'취약점 비교',playground:'플레이그라운드',settings:'⚙ 설정'};
+const VIEW_NAMES={attack:'공격 · 벤치',history:'성공 전략 · 기록',compare:'취약점 비교',analysis:'취약점 분석',playground:'플레이그라운드',settings:'⚙ 설정'};
 function switchView(v){
   $$('.menu-item').forEach(x=>x.classList.toggle('active',x.dataset.v===v));
   $$('.view').forEach(x=>x.classList.remove('active'));
@@ -516,6 +568,7 @@ function switchView(v){
   $('#menuPanel').classList.remove('open');
   if(v==='history')loadHistory();
   if(v==='compare')loadCompare();
+  if(v==='analysis')loadAnalysis();
   if(v==='attack')renderBenchRoles();  // 설정 변경 후 공격 뷰로 오면 항상 최신 역할 표시
 }
 $('#menuBtn').onclick=e=>{e.stopPropagation();$('#menuPanel').classList.toggle('open');};
@@ -1050,12 +1103,163 @@ async function loadCompare(){
     </div>`;
   }).join('')+'<div class="cbar-axis"><span>0</span><span>취약점 점수 →</span><span>'+max+'</span></div>';
   $('#c-table tbody').innerHTML=models.map(m=>
-    `<tr><td>${esc(m.model)}</td>
+    `<tr class="c-modelrow" data-m="${esc(m.model)}" style="cursor:pointer" title="행 클릭 → 성공 사례 펼치기">
+       <td><span class="caret">▶</span> ${esc(m.model)} <a href="#" class="c-focus" data-m="${esc(m.model)}" style="font-size:11px;margin-left:6px" title="이 모델 집중 분석">🔬집중분석</a></td>
        <td><b style="color:${m.vuln>=50?'var(--bad)':m.vuln>0?'var(--warn)':'var(--muted)'}">${m.vuln}</b></td>
        <td>${m.ok}/${m.n}</td><td>${m.rate}%</td>
        <td>🔴${m.hi} · 🟡${m.mid} · 🟢${m.lo}</td></tr>`).join('');
 }
 $('#c-refresh').onclick=e=>{e.preventDefault();loadCompare();};
+let anPreselect=null;
+function focusModel(m){ anPreselect=m; switchView('analysis'); }
+// 모델 행 클릭 → 성공 사례 펼치기 · 🔬집중분석 링크 → 분석 뷰(해당 모델 필터)
+$('#c-table').addEventListener('click', async e=>{
+  const foc=e.target.closest('.c-focus');
+  if(foc){ e.preventDefault(); focusModel(foc.dataset.m); return; }
+  const row=e.target.closest('.c-modelrow');
+  if(!row) return;
+  const model=row.dataset.m, car=row.querySelector('.caret'), nxt=row.nextElementSibling;
+  if(nxt && nxt.classList.contains('c-detail')){ nxt.remove(); if(car)car.textContent='▶'; return; }
+  if(car)car.textContent='▼';
+  const tr=document.createElement('tr'); tr.className='c-detail';
+  const td=document.createElement('td'); td.colSpan=5; td.style.cssText='background:var(--panel2);padding:10px 12px';
+  td.innerHTML='<div class="muted small">'+L('불러오는 중…','loading…')+'</div>';
+  tr.appendChild(td); row.after(tr);
+  try{
+    const d=await (await fetch('/api/history?view=successes&limit=2000')).json();
+    const rows=(d.rows||[]).filter(r=>(r.defender_backend||'')===model);
+    if(!rows.length){ td.innerHTML='<div class="muted small">'+L('이 모델의 성공(공격 뚫림) 사례가 없습니다.','No successful breaches for this model.')+'</div>'; return; }
+    td.innerHTML='<div class="small" style="margin-bottom:8px"><b>'+esc(model)+'</b> '+L('성공 사례 ','breaches ')+rows.length+L('건 · 카드 클릭 시 페이로드·응답·판정 상세',' · click a card for payload/response/verdict')+'</div>';
+    rows.forEach(r=>td.appendChild(histCard(r)));
+  }catch(err){ td.innerHTML='<div class="small" style="color:var(--bad)">'+L('불러오기 실패','load failed')+'</div>'; }
+});
+
+// ---------- 취약점 분석 (인포그래픽 + LLM 복합위험 예측) ----------
+const AN_CATCOL={physical_robot:'#5aa0f2',ecommerce:'#f0883e',finance:'#e5c07b',workflow:'#98c379',sexual_safety:'#c678dd',custom:'#56b6c2'};
+function anBars(counts,color){
+  const ents=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  if(!ents.length)return '<div class="muted small">'+L('데이터 없음','no data')+'</div>';
+  const mx=Math.max(1,...ents.map(e=>e[1]));
+  return ents.map(([k,v])=>{const col=typeof color==='function'?color(k):color;
+    return `<div class="cbar-row"><div class="cbar-label" title="${esc(k)}">${esc(k)}</div>
+      <div class="cbar-track"><div class="cbar-fill" style="width:${Math.round(v/mx*100)}%;background:${col}"></div></div>
+      <div class="cbar-val">${v}</div></div>`;}).join('');
+}
+async function loadAnalysis(){
+  $('#an-status').innerHTML='<span class="spin"></span>';
+  let succ=[], all=[];
+  try{ succ=(await (await fetch('/api/history?view=successes&limit=2000')).json()).rows||[]; }catch(e){}
+  try{ all=(await (await fetch('/api/history?view=all&limit=2000')).json()).rows||[]; }catch(e){}
+  $('#an-status').textContent='';
+  const cat={}; (META.objectives||[]).forEach(o=>cat[o.id]=o.category||'custom');
+  const models=[...new Set(all.map(r=>r.defender_backend).filter(Boolean))].sort();
+  const sel=$('#an-model'), cur=sel.value;
+  sel.innerHTML='<option value="">'+L('전체','All')+'</option>'+models.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  if(anPreselect && models.includes(anPreselect)) sel.value=anPreselect; else if(cur) sel.value=cur;
+  anPreselect=null;
+  const fm=sel.value;
+  const R=fm?succ.filter(r=>r.defender_backend===fm):succ;
+  const A=fm?all.filter(r=>r.defender_backend===fm):all;
+  const cnt=(arr,key)=>{const o={};arr.forEach(r=>{const k=key(r)||'?';o[k]=(o[k]||0)+1;});return o;};
+  // 스탯 타일
+  $('#an-tiles').innerHTML=[
+    [L('성공 공격','Breaches'),R.length],
+    [L('뚫린 모델','Models'),new Set(R.map(r=>r.defender_backend)).size],
+    [L('고위험 성공','High-risk'),R.filter(r=>r.risk==='high').length],
+    [L('영향 카테고리','Categories'),new Set(R.map(r=>cat[r.objective]||'?')).size]
+  ].map(([l,v])=>`<div class="an-tile"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+  // 전략
+  $('#an-strat').innerHTML=anBars(cnt(R,r=>r.strategy_name||r.strategy),'var(--accent)');
+  // 카테고리(카테고리 고정색)
+  $('#an-cat').innerHTML=anBars(cnt(R,r=>cat[r.objective]||'custom'),k=>AN_CATCOL[k]||'#888');
+  // 위험도 스택
+  const rk={high:R.filter(r=>r.risk==='high').length,med:R.filter(r=>r.risk==='med').length,low:R.filter(r=>r.risk==='low').length};
+  const tot=Math.max(1,rk.high+rk.med+rk.low);
+  $('#an-risk').innerHTML=`<div class="stk"><span style="width:${rk.high/tot*100}%;background:var(--bad)"></span><span style="width:${rk.med/tot*100}%;background:var(--warn)"></span><span style="width:${rk.low/tot*100}%;background:var(--ok)"></span></div>
+    <div class="lgd"><span><i style="background:var(--bad)"></i>${L('고위험','High')} ${rk.high}</span><span><i style="background:var(--warn)"></i>${L('중','Med')} ${rk.med}</span><span><i style="background:var(--ok)"></i>${L('하','Low')} ${rk.low}</span></div>`;
+  // 툴/행동 유형
+  const toolName=r=>{const a=r.action;if(!a||a==='[]'||a==='None')return L('응답기반(툴콜 없음)','response-based');const m=String(a).match(/([A-Za-z_][A-Za-z0-9_]*)/);return m?m[1]:L('기타','other');};
+  $('#an-tool').innerHTML=anBars(cnt(R,toolName),'#56b6c2');
+  renderSW(A,cat);
+}
+function renderSW(A,cat){
+  const att={},ok={};
+  A.forEach(r=>{const c=cat[r.objective]||'custom';att[c]=(att[c]||0)+1;if(r.success)ok[c]=(ok[c]||0)+1;});
+  const cats=Object.keys(att);
+  if(!cats.length){ $('#an-sw').innerHTML='<div class="muted small">'+L('데이터 없음','no data')+'</div>'; return; }
+  const held=cats.filter(c=>!(ok[c]>0)), weak=cats.filter(c=>ok[c]>0).sort((a,b)=>(ok[b]||0)-(ok[a]||0));
+  const chip=(c,extra)=>`<span class="chip" style="margin:2px">${esc(c)}${extra||''}</span>`;
+  let h='<div class="gridAn" style="margin:0">';
+  h+='<div><div class="k" style="margin-top:0;color:var(--ok)">💚 '+L('견고(강점)','Robust (strengths)')+'</div>'+(held.length?held.map(c=>chip(c)).join(''):'<span class="muted small">'+L('없음','none')+'</span>')+'<div class="muted small" style="margin-top:4px">'+L('시도했지만 뚫리지 않은 카테고리','attempted but never breached')+'</div></div>';
+  h+='<div><div class="k" style="margin-top:0;color:var(--bad)">🩸 '+L('취약(약점)','Vulnerable (weaknesses)')+'</div>'+(weak.length?weak.map(c=>chip(c,' <b>'+ok[c]+'</b>')).join(''):'<span class="muted small">'+L('없음','none')+'</span>')+'<div class="muted small" style="margin-top:4px">'+L('뚫린 카테고리(성공 건수)','breached (breach count)')+'</div></div>';
+  h+='</div>';
+  $('#an-sw').innerHTML=h;
+}
+$('#an-refresh')&&($('#an-refresh').onclick=e=>{e.preventDefault();loadAnalysis();});
+$('#an-model')&&($('#an-model').onchange=()=>loadAnalysis());
+$('#an-run')&&($('#an-run').onclick=async e=>{
+  e.preventDefault();
+  const box=$('#an-llm');
+  box.innerHTML='<span class="spin"></span> '+L('LLM 분석 중… (수초~수십초)','analyzing… (may take a while)');
+  try{
+    const res=await fetch('/api/risk_analysis',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:$('#an-model').value||null})});
+    if(res.status===404){ box.innerHTML='<div class="muted small">'+L('이 기능(LLM 복합위험 예측)은 서버 재시작 후 활성화됩니다 — 신규 엔드포인트.','Available after a server restart (new endpoint).')+'</div>'; return; }
+    const d=await res.json();
+    if(!d.ok){ box.innerHTML='<div class="small" style="color:var(--warn)">'+esc(d.error||L('분석 실패','failed'))+'</div>'; return; }
+    box.innerHTML=renderRisk(d.analysis,d.n);
+  }catch(err){ box.innerHTML='<div class="muted small">'+L('이 기능은 서버 재시작 후 활성화됩니다.','Available after a server restart.')+'</div>'; }
+});
+function renderRisk(a,n){
+  if(!a)return '<div class="muted small">'+L('분석 결과 없음','no result')+'</div>';
+  const sev=s=>`<span class="sev-${esc(s||'medium')}">${esc((s||'').toUpperCase())}</span>`;
+  let h=`<div style="margin-bottom:8px"><b style="font-size:16px">${L('종합 심각도','Overall severity')}: ${sev(a.overall_severity)}</b> <span class="muted small">(${L('성공 사례','from')} ${n})</span></div>`;
+  if(a.headline)h+=`<p style="margin:0 0 12px">${esc(a.headline)}</p>`;
+  if(a.category_risks&&a.category_risks.length){h+=`<div class="k">${L('카테고리별 운영 위험','Per-category operational risk')}</div>`;
+    a.category_risks.forEach(c=>h+=`<div class="rk-card"><b>${esc(c.category)}</b> ${sev(c.severity)}<div class="small" style="margin-top:3px">${esc(c.risk)}</div></div>`);}
+  if(a.compound_risks&&a.compound_risks.length){h+=`<div class="k">${L('복합(연쇄) 위험 시나리오','Compound (chained) risks')}</div>`;
+    a.compound_risks.forEach(c=>{h+=`<div class="rk-card"><b>${esc(c.scenario)}</b> ${sev(c.severity)}`;
+      if(c.chain&&c.chain.length)h+=`<ol class="chain small">${c.chain.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`;
+      if(c.impact)h+=`<div class="small" style="color:var(--warn)">↳ ${esc(c.impact)}</div>`;h+=`</div>`;});}
+  const chips=(arr,lbl)=>arr&&arr.length?`<div class="k">${lbl}</div><div style="margin-top:3px">${arr.map(x=>`<span class="chip" style="margin:2px">${esc(x)}</span>`).join('')}</div>`:'';
+  h+=chips(a.strengths,L('견고 지점(강점)','Strengths'));
+  h+=chips(a.weaknesses,L('취약 지점(약점)','Weaknesses'));
+  h+=chips(a.tools_abused,L('악용 툴/행동','Tools/actions abused'));
+  h+=chips(a.response_modes,L('뚫림 응답 양상','Breach response modes'));
+  h+=chips(a.mitigations,L('우선 완화책','Priority mitigations'));
+  return h;
+}
+
+// ---------- 전략 생성기 (가용 모델 브레인스토밍 → Claude 종합) ----------
+$('#sg-run')&&($('#sg-run').onclick=async e=>{
+  e.preventDefault();
+  const box=$('#sg-out'), model=$('#an-model')?$('#an-model').value:'';
+  box.innerHTML='<span class="spin"></span> '+L('가용 모델들에게 물어보는 중… (여러 모델 호출로 수십 초~수 분)','asking all available models… (can take minutes)');
+  try{
+    const res=await fetch('/api/strategy_generator',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:model||null})});
+    if(res.status===404){ box.innerHTML='<div class="muted small">'+L('이 기능은 서버 재시작 후 활성화됩니다 — 신규 엔드포인트.','Available after a server restart (new endpoint).')+'</div>'; return; }
+    const d=await res.json();
+    if(!d.ok && !(d.proposals&&d.proposals.length)){ box.innerHTML='<div class="small" style="color:var(--warn)">'+esc(d.error||L('생성 실패','failed'))+'</div>'; return; }
+    box.innerHTML=renderStrategy(d);
+  }catch(err){ box.innerHTML='<div class="muted small">'+L('이 기능은 서버 재시작 후 활성화됩니다.','Available after a server restart.')+'</div>'; }
+});
+function renderStrategy(d){
+  let h=''; const ns=d.new_strategy||{};
+  if(ns.name||ns.angle){
+    const sv=ns.risk==='high'?'high':ns.risk==='low'?'low':'medium';
+    h+=`<div class="rk-card" style="border-left-color:var(--ok)"><div class="k" style="margin-top:0;color:var(--ok)">${L('🎯 Claude 종합 신규 전략','🎯 New strategy (Claude synthesis)')}</div>
+      <b style="font-size:15px">${esc(ns.name||'')}</b> ${ns.risk?`<span class="sev-${sv}">${esc(ns.risk)}</span>`:''}${ns.key?`<span class="muted small"> · ${esc(ns.key)}</span>`:''}
+      <div style="margin-top:6px"><div class="k">${L('각도','angle')}</div><pre>${esc(ns.angle||'')}</pre></div>
+      ${ns.rationale?`<div class="k">${L('근거','rationale')}</div><div class="small">${esc(ns.rationale)}</div>`:''}</div>`;
+  }
+  if(d.situation){ const s=d.situation;
+    h+=`<div class="small muted" style="margin:6px 0">${L('현 상황','situation')}: ${L('시도전략','tried')} ${(s.tried||[]).length} · ${L('성공','succ')} ${s.succ} · ${L('실패','fail')} ${s.fail} · ${L('버틴','held')} [${(s.held||[]).join(', ')||'-'}] · ${L('뚫린','breached')} [${(s.breached||[]).join(', ')||'-'}]</div>`;
+  }
+  if(d.proposals&&d.proposals.length){
+    h+=`<div class="k">${L('모델별 브레인스토밍','Per-model brainstorm')} (${d.proposals.length})</div>`;
+    d.proposals.forEach(p=>h+=`<div class="rk-card"><b>${esc(p.model)}</b> — ${esc(p.idea||'')}<div class="small" style="margin-top:3px">${esc(p.angle||'')}</div></div>`);
+  }
+  return h||'<div class="muted small">'+L('결과 없음','no result')+'</div>';
+}
 </script>
 </body>
 </html>
