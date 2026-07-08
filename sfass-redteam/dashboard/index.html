@@ -768,13 +768,30 @@ $('#t-test').onclick=async()=>{
   $('#t-status').innerHTML='<span class="spin"></span> 연결 테스트 중';
   const r=await (await fetch('/api/target/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})).json();
   $('#t-status').textContent='';
-  const ok=r.ok&&!r.error;
+  // ---- 항목별 배선 검증 ----
+  const st=r.status||0, mode=body.mode;
+  const conn = st>0 && st<400 && !r.error;
+  const auth = !(st===401||st===403);
+  const txt  = !!(r.agent_text && String(r.agent_text).trim());
+  const rawDump = txt && r.raw_preview && String(r.agent_text).trim()===String(r.raw_preview).trim();
+  const flagPath=($('#t-flagpath').value||'').trim();
+  const flagSeen = flagPath && (r.raw_preview||'').includes(flagPath.split('.')[0]);
+  const row=(kind,label,note)=>{const b=kind==='ok'?'<span class="badge ok">✅</span>':kind==='bad'?'<span class="badge bad">❌</span>':'<span class="badge" style="background:var(--warn);color:#000">⚠</span>';
+    return `<div class="flex" style="gap:8px;margin:3px 0">${b}<b>${label}</b> <span class="muted small">${note||''}</span></div>`;};
+  let checks = row(conn?'ok':'bad', L('도달(연결)','Reachable'), 'HTTP '+st+(r.error?(' · '+esc(r.error)):''));
+  if(mode==='live') checks += auth?row('ok',L('인증 통과','Auth OK'),''):row('bad',L('인증 실패','Auth failed'),L('401/403 — 헤더에 토큰/쿠키 필요 (🔐 로그인 후 토큰 획득)','401/403 — needs token/cookie'));
+  checks += (txt&&!rawDump)?row('ok',L('응답 텍스트 경로 매핑','Response-text path'),L('agent_text 정상 추출','extracted ok'))
+    : (txt&&rawDump)?row('warn',L('응답 텍스트 경로','Response-text path'),L('원본이 통째로 반환됨 — 경로 확인 필요','raw dump — check path'))
+    : row('bad',L('응답 텍스트 경로 매핑','Response-text path'),L('agent_text 비어있음 — 경로 확인','empty — check path'));
+  checks += (r.action!=null)?row('ok',L('action(툴콜) 경로','Action path'),'action='+esc(String(r.action)).slice(0,40)):row('warn',L('action 경로','Action path'),L('이번 응답엔 action 없음(정상일 수 있음)','none this time'));
+  if(flagPath) checks += flagSeen?row('ok',L('성공 플래그 경로 존재','Success-flag path'),esc(flagPath)):row('warn',L('성공 플래그 경로','Success-flag path'),L('테스트 응답엔 미검출(실제 성공 시 확인)','not in test resp'));
+  const allok = conn && (mode!=='live'||auth) && txt && !rawDump;
   $('#t-testout').innerHTML=`
-    <div class="flex" style="margin-top:8px"><span class="badge ${ok?'ok':'bad'}">${ok?'응답 OK':'실패'}</span>
-      <span class="chip">HTTP ${r.status}</span>${r.action?`<span class="chip">action: ${esc(String(r.action))}</span>`:''}
-      ${r.error?`<span style="color:var(--bad)" class="small">${esc(r.error)}</span>`:''}</div>
-    <div class="k">파싱된 응답 텍스트 (agent_text)</div><pre>${esc(r.agent_text||'(비어있음 — 응답 경로 매핑 확인)')}</pre>
-    <div class="k">원본 응답 미리보기 (경로 매핑에 사용)</div><pre>${esc(r.raw_preview||'')}</pre>`;
+    <div class="flex" style="margin-top:8px"><span class="badge ${allok?'ok':'bad'}" style="font-size:13px">${allok?L('✅ 배선 성공','✅ Wiring OK'):L('⚠ 배선 점검 필요','⚠ Check wiring')}</span>
+      <span class="chip">HTTP ${st}</span></div>
+    <div style="margin:8px 0">${checks}</div>
+    <div class="k">${L('파싱된 응답 텍스트 (agent_text)','Parsed agent_text')}</div><pre>${esc(r.agent_text||'(비어있음 — 응답 경로 매핑 확인)')}</pre>
+    <div class="k">${L('원본 응답 미리보기 (경로 매핑에 사용)','Raw response preview')}</div><pre>${esc(r.raw_preview||'')}</pre>`;
 };
 
 // ---------- 모델 역할 스위처 ----------
