@@ -515,6 +515,12 @@ def api_compare():
     return jsonify({"models": store.model_scores()})
 
 
+@app.route("/api/strategies/successful")
+def api_strategies_successful():
+    """기록에서 성공 이력이 있는 개별 전략 키(성공전략만 벤치용)."""
+    return jsonify({"keys": store.successful_strategies()})
+
+
 def _recon_phase(tgt, judge_backend, jdg_name, tgt_label, probes=None, lang="ko"):
     """정찰 단계 (SSE 제너레이터).
 

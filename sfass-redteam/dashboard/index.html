@@ -271,7 +271,8 @@
         <div class="flex small" style="margin:2px 0 6px">
           <a href="#" id="a-all" class="muted">전체</a> ·
           <a href="#" id="a-none" class="muted">해제</a> ·
-          <a href="#" id="a-reco" class="muted">추천(툴·실행강제)</a>
+          <a href="#" id="a-reco" class="muted">추천(툴·실행강제)</a> ·
+          <a href="#" id="a-succ" style="color:var(--ok)">✅ 성공전략만</a>
         </div>
         <div id="a-strats" class="small" style="max-height:calc(100vh - 560px);min-height:200px;overflow:auto;border:1px solid var(--border);border-radius:6px;padding:8px"></div>
         <label style="margin-top:10px">🎲 다양화 옵션 <span class="muted">(다양한 공격 구성 자동 공략)</span></label>
@@ -538,8 +539,16 @@ document.addEventListener('click',e=>{
   if(e.target.id==='a-all'){e.preventDefault();setSel(()=>true);}
   if(e.target.id==='a-none'){e.preventDefault();setSel(()=>false);}
   if(e.target.id==='a-reco'){e.preventDefault();setSel(v=>RECO.includes(v));}
+  if(e.target.id==='a-succ'){e.preventDefault();selectSuccessful();}
   if(e.target.id==='a-clear'){e.preventDefault();$('#a-console').innerHTML='';}
 });
+async function selectSuccessful(){
+  let keys=[];
+  try{ keys=(await (await fetch('/api/strategies/successful')).json()).keys||[]; }catch(_){}
+  if(!keys.length){ alert(L('성공 이력이 있는 전략이 없습니다. 먼저 벤치를 돌려 성공을 쌓으세요.','No strategies with a success record yet. Run a bench first.')); return; }
+  setSel(v=>keys.includes(v));
+  $('#a-status').innerHTML=`<span style="color:var(--ok)">${L('성공전략 '+keys.length+'개 선택됨','Selected '+keys.length+' proven strategies')}</span>`;
+}
 boot().then(()=>{ try{resumeBench();}catch(_){}});
 
 // ---------- 타깃 엔드포인트 설정 (⚙ 설정 탭) ----------

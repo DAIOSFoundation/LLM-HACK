@@ -110,6 +110,24 @@ def stats() -> Dict[str, Any]:
             "by_strategy": by_strategy, "by_objective": by_objective}
 
 
+def successful_strategies() -> List[str]:
+    """성공 이력이 있는 개별 전략 키 목록. combo:a+b 성공은 구성 전략 a,b 로 분해."""
+    with _LOCK, _conn() as c:
+        rows = c.execute(
+            "SELECT DISTINCT strategy FROM attempts WHERE success=1 AND strategy IS NOT NULL AND strategy!=''"
+        ).fetchall()
+    keys = set()
+    for r in rows:
+        s = r["strategy"] or ""
+        if s.startswith("combo:"):
+            for k in s[len("combo:"):].split("+"):
+                if k:
+                    keys.add(k)
+        elif s:
+            keys.add(s)
+    return sorted(keys)
+
+
 def model_scores() -> List[Dict[str, Any]]:
     """방어자(=공격 대상 모델/에이전트)별 취약점 점수 집계.
 
