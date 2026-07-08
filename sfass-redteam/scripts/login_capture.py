@@ -33,8 +33,11 @@ def main() -> int:
     url, out = sys.argv[1], sys.argv[2]
     profile_dir = sys.argv[3] if len(sys.argv) > 3 else os.path.expanduser("~/.cache/sfass-login-profile")
     os.makedirs(profile_dir, exist_ok=True)
-    # 이전 실행이 강제종료되며 남긴 스테일 락 제거(재실행 실패 방지)
-    for _f in ("SingletonLock", "SingletonCookie", "SingletonSocket"):
+    # 스테일 락 + 버전 마커 제거:
+    #  - Singleton*: 강제종료 시 남는 프로필 락(재실행 실패 방지)
+    #  - "Last Version": 다른 빌드(번들 chromium↔실제 Chrome)로 프로필을 열 때 뜨는
+    #    "프로필을 여는 동안 문제가 발생…일부 기능 사용 불가"(다운그레이드) 경고 방지
+    for _f in ("SingletonLock", "SingletonCookie", "SingletonSocket", "Last Version"):
         try:
             os.remove(os.path.join(profile_dir, _f))
         except OSError:
