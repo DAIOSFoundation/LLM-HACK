@@ -3,6 +3,7 @@ config.yaml
 __pycache__/
 *.pyc
 .venv/
+data/
 data/successful_payloads.jsonl
 data/*.db
 data/*.db-wal
