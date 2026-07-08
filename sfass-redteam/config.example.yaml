@@ -24,7 +24,7 @@ attacker:
 #     physical_ai: 로보틱스 특화(타깃 두뇌 에뮬레이션). 서버 기동 시 라이브 헬스체크.
 # ---------------------------------------------------------------------------
 nvidia_models:
-  - {key: "minimax",        label: "MiniMax M3 · 기본 공격자",           model_id: "minimaxai/minimax-m3"}
+  - {key: "minimax",        label: "MiniMax M3",           model_id: "minimaxai/minimax-m3"}
   - {key: "minimax-m27",    label: "MiniMax M2.7",                       model_id: "minimaxai/minimax-m2.7"}
   - {key: "nemotron-super", label: "Nemotron 3 Super 120B · 에이전트추론", model_id: "nvidia/nemotron-3-super-120b-a12b"}
   - {key: "nemotron-nano",  label: "Nemotron 3 Nano 30B · 경량",          model_id: "nvidia/nemotron-3-nano-30b-a3b"}
@@ -32,12 +32,12 @@ nvidia_models:
   # 피지컬 AI 특화 Cosmos Reason 2 8B 는 계정 활성화 필요(미활성 시 전송 404). 활성화하면 추가:
   # - {key: "cosmos-reason", label: "Cosmos Reason 2 8B · 피지컬AI(로봇두뇌)", model_id: "nvidia/cosmos-reason2-8b", physical_ai: true}
   # --- 라이브 테스트로 확인된 추가 모델 (2026-07-08) ---
-  - {key: "qwen-next",      label: "Qwen3-Next 80B · 공격/타깃",          model_id: "qwen/qwen3-next-80b-a3b-instruct"}
-  - {key: "deepseek-v4",    label: "DeepSeek V4 Pro · 공격/타깃",         model_id: "deepseek-ai/deepseek-v4-pro"}
-  - {key: "mistral-large3", label: "Mistral Large 3 675B · 공격/타깃",     model_id: "mistralai/mistral-large-3-675b-instruct-2512"}
-  - {key: "glm",            label: "GLM 5.2 · 공격/타깃",                 model_id: "z-ai/glm-5.2"}
-  - {key: "gemma-4",        label: "Gemma 4 31B · 공격/타깃",             model_id: "google/gemma-4-31b-it"}
-  - {key: "qwen-122b",      label: "Qwen3.5 122B · 타깃(생성거부·견고)",    model_id: "qwen/qwen3.5-122b-a10b"}
+  - {key: "qwen-next",      label: "Qwen3-Next 80B",          model_id: "qwen/qwen3-next-80b-a3b-instruct"}
+  - {key: "deepseek-v4",    label: "DeepSeek V4 Pro",         model_id: "deepseek-ai/deepseek-v4-pro"}
+  - {key: "mistral-large3", label: "Mistral Large 3 675B",     model_id: "mistralai/mistral-large-3-675b-instruct-2512"}
+  - {key: "glm",            label: "GLM 5.2",                 model_id: "z-ai/glm-5.2"}
+  - {key: "gemma-4",        label: "Gemma 4 31B",             model_id: "google/gemma-4-31b-it"}
+  - {key: "qwen-122b",      label: "Qwen3.5 122B",    model_id: "qwen/qwen3.5-122b-a10b"}
 
 # ---------------------------------------------------------------------------
 # 1b) 임의 OpenAI 호환 LLM 엔드포인트 (자체 base_url/키) — 방어자/공격자/판정으로 선택 가능

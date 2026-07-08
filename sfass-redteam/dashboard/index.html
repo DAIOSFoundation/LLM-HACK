@@ -44,6 +44,16 @@
   button.ghost{background:var(--chip);color:var(--txt);border:1px solid var(--border)}
   button:disabled{opacity:.5;cursor:not-allowed}
   .grid2{display:grid;grid-template-columns:340px 1fr;gap:14px}
+  /* 공격 벤치 최상단 역할 바 (공격자·방어자·판정) */
+  .rolebar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 26px;margin-bottom:14px;
+    background:linear-gradient(90deg,rgba(88,166,255,.12),rgba(88,166,255,.03));
+    border:1px solid var(--accent);border-radius:10px;padding:13px 20px;font-size:15px}
+  .rolebar .rb-seg{display:flex;align-items:baseline;gap:8px}
+  .rolebar .rb-ico{font-size:18px}
+  .rolebar .rb-lab{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
+  .rolebar .rb-val{font-weight:800;font-size:16px}
+  .rolebar .rb-atk{color:#ff7b72} .rolebar .rb-tgt{color:var(--accent)} .rolebar .rb-jdg{color:var(--ok)}
+  .rolebar a{margin-left:auto;font-size:12px}
   .gridA{display:grid;grid-template-columns:340px minmax(0,2fr) minmax(0,3fr);gap:14px;align-items:start}
   @media(max-width:1200px){.gridA{grid-template-columns:1fr}}
   /* 2열: 전략별 성공률(상한 스크롤) 위 + 실시간 로그(남은 공간 채움) 아래 */
@@ -119,7 +129,6 @@
 <body>
 <header>
   <h1>🤖 SFASS 2026 Red-Team Dashboard</h1>
-  <span class="meta" id="metaLine">로딩…</span>
   <div class="flex" style="margin-left:auto;gap:10px">
     <span class="chip" id="tgtChip" title="현재 공격 타깃">타깃: …</span>
     <span class="chip" id="curView">공격 · 벤치</span>
@@ -258,13 +267,13 @@
 
 <!-- ================= 공격/벤치 ================= -->
 <section class="view active" id="v-attack">
+  <div class="rolebar" id="a-rolebar"></div>
   <div class="gridA">
     <div>
       <div class="card">
         <h3>공격 구성</h3>
         <label>목표 동작 <span class="muted">(여러 개 = 스윕)</span></label>
         <div id="a-objs" class="small" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;max-height:130px;overflow:auto"></div>
-        <div class="k" id="a-tgtinfo" style="margin-top:2px"></div>
         <label>전략별 시도 횟수 (trials)</label>
         <input id="a-trials" type="number" value="2" min="1" max="8">
         <label>전략 선택 <span class="muted" id="a-selcount"></span></label>
@@ -505,6 +514,7 @@ function switchView(v){
   $('#menuPanel').classList.remove('open');
   if(v==='history')loadHistory();
   if(v==='compare')loadCompare();
+  if(v==='attack')renderBenchRoles();  // 설정 변경 후 공격 뷰로 오면 항상 최신 역할 표시
 }
 $('#menuBtn').onclick=e=>{e.stopPropagation();$('#menuPanel').classList.toggle('open');};
 $$('.menu-item').forEach(m=>m.onclick=()=>switchView(m.dataset.v));
@@ -512,7 +522,6 @@ document.addEventListener('click',e=>{if(!e.target.closest('.menu-wrap'))$('#men
 
 async function boot(){
   META=await (await fetch('/api/meta')).json();
-  $('#metaLine').textContent=L(`공격자 ${META.attacker_model} · Claude판정 ${META.claude_available?'ON':'OFF'} · 전략 ${META.strategies.length}종`,`Attacker ${META.attacker_model} · Claude judge ${META.claude_available?'ON':'OFF'} · ${META.strategies.length} strategies`);
   const objOpts=META.objectives.map(o=>`<option value="${o.id}">${o.id} — ${esc(o.description)}</option>`).join('');
   $('#j-obj').innerHTML=objOpts;
   $('#h-obj').innerHTML='<option value="">전체 목표</option>'+objOpts;
@@ -572,13 +581,19 @@ function setChip(mode){
 }
 // 공격·벤치 상단에 현재 공격자·타깃(방어자)·판정 표시
 function renderBenchRoles(){
-  const el=$('#a-tgtinfo'); if(!el)return;
   const lbl=k=>((ROLE_BK[k]||{}).label||k||'?');
-  const atk=lbl(ROLE_CUR.attacker), jdg=lbl(ROLE_CUR.judge);
-  const tgt = TGT_MODE==='live'
-    ? (L('🌐 HTTP 엔드포인트','🌐 HTTP endpoint')+(TGT_INFO?' '+esc(TGT_INFO):''))
-    : ('🤖 <b>'+esc(lbl(ROLE_CUR.defender))+'</b>');
-  el.innerHTML=`⚔ ${L('공격자','Attacker')}: <b>${esc(atk)}</b> &nbsp;·&nbsp; 🎯 ${L('타깃(방어자)','Target')}: ${tgt} &nbsp;·&nbsp; ⚖ ${L('판정','Judge')}: <b>${esc(jdg)}</b> <a href="#" id="a-rolelink" class="muted">${L('설정 ⚙','settings ⚙')}</a>`;
+  const el=$('#a-rolebar');
+  if(el){
+    const atk=lbl(ROLE_CUR.attacker), jdg=lbl(ROLE_CUR.judge);
+    const tgt = TGT_MODE==='live'
+      ? (L('🌐 HTTP 엔드포인트','🌐 HTTP endpoint')+(TGT_INFO?' '+esc(TGT_INFO):''))
+      : esc(lbl(ROLE_CUR.defender));
+    el.innerHTML=
+      `<span class="rb-seg"><span class="rb-ico">⚔️</span><span class="rb-lab">${L('공격자','ATTACKER')}</span> <span class="rb-val rb-atk">${esc(atk)}</span></span>`
+     +`<span class="rb-seg"><span class="rb-ico">🎯</span><span class="rb-lab">${L('타깃(방어자)','TARGET')}</span> <span class="rb-val rb-tgt">${tgt}</span></span>`
+     +`<span class="rb-seg"><span class="rb-ico">⚖️</span><span class="rb-lab">${L('판정','JUDGE')}</span> <span class="rb-val rb-jdg">${esc(jdg)}</span></span>`
+     +`<a href="#" id="a-rolelink" class="muted">${L('설정에서 변경 ⚙','change in settings ⚙')}</a>`;
+  }
 }
 document.addEventListener('click',e=>{ if(e.target.id==='a-rolelink'){e.preventDefault();switchView('settings');}});
 function toggleLiveFields(){
@@ -672,7 +687,18 @@ function roleWarn(){
   });
   $('#r-warn').innerHTML = w.length?`<span style="color:var(--warn)">${esc(w.join(' · '))}</span>`:'';
 }
-$('#r-attacker').onchange=roleWarn; $('#r-defender').onchange=roleWarn; $('#r-judge').onchange=roleWarn;
+// 드롭다운만 바꿔도 즉시 서버 적용 + 공격 벤치 역할 바 자동 갱신 (별도 저장 불필요)
+async function autoSaveRoles(){
+  roleWarn();
+  const body={attacker:$('#r-attacker').value,defender:$('#r-defender').value,judge:$('#r-judge').value};
+  try{
+    const r=await (await fetch('/api/roles',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+    ROLE_CUR=r.roles||body; renderBenchRoles();
+    const warn=ROLE_CUR.attacker==='claude'?' · <span style="color:var(--warn)">⚠ Claude 공격자는 생성 거부 가능</span>':'';
+    $('#r-warn').innerHTML=`<span style="color:var(--ok)">${L('자동 적용됨','Auto-applied')}: ${esc((ROLE_BK[ROLE_CUR.attacker]||{}).label||ROLE_CUR.attacker)} → ${esc((ROLE_BK[ROLE_CUR.defender]||{}).label||ROLE_CUR.defender)}</span>${warn}`;
+  }catch(_){ roleWarn(); }
+}
+$('#r-attacker').onchange=autoSaveRoles; $('#r-defender').onchange=autoSaveRoles; $('#r-judge').onchange=autoSaveRoles;
 $('#r-test').onclick=async()=>{
   const keys=[...new Set([$('#r-attacker').value,$('#r-defender').value,$('#r-judge').value])];
   $('#r-testout').innerHTML='<span class="spin"></span> 백엔드 응답 확인 중… (추론 모델은 수초~수십초 소요)';
