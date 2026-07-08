@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SFASS 2026 Red-Team Dashboard</title>
+<title>Tony's Red-Team Dashboard</title>
 <style>
   :root{
     --bg:#0d1117; --panel:#161b22; --panel2:#1c2333; --border:#30363d;
@@ -128,7 +128,7 @@
 </head>
 <body>
 <header>
-  <h1>🤖 SFASS 2026 Red-Team Dashboard</h1>
+  <h1>🤖 Tony's Red-Team Dashboard</h1>
   <div class="flex" style="margin-left:auto;gap:10px">
     <span class="chip" id="tgtChip" title="현재 공격 타깃">타깃: …</span>
     <span class="chip" id="curView">공격 · 벤치</span>
@@ -417,7 +417,7 @@
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 let META={strategies:[],objectives:[],defense_levels:[]};
-const esc=s=>(s||"").replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const esc=s=>(s==null?"":String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
 // ===== i18n: 한국어 UI → 영어 사전 번역 레이어 (기존 마크업/로직 미변경) =====
 const I18N_EN={
@@ -813,7 +813,7 @@ function tryCard(r){
      ${r.rationale?`<div class="k">노림수</div><pre>${esc(r.rationale)}</pre>`:''}
      <div class="k">페이로드 (에이전트로 전송)</div><pre>${esc(r.payload)}</pre>
      <div class="k">에이전트 응답</div><pre>${esc(r.agent_text)}</pre>
-     <div class="k">판정 근거 ${r.action?`· action=<b>${esc(r.action)}</b>`:''}</div><pre>${esc(r.evidence)}</pre>
+     <div class="k">판정 근거 ${(r.action && !(Array.isArray(r.action)&&!r.action.length))?`· action=<b>${esc(typeof r.action==='string'?r.action:JSON.stringify(r.action))}</b>`:''}</div><pre>${esc(r.evidence)}</pre>
    </div>`;
   div.querySelector('.head').onclick=()=>div.classList.toggle('open');
   return div;
