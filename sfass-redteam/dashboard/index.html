@@ -527,7 +527,7 @@ async function boot(){
     `<label style="display:flex;gap:8px;align-items:flex-start;margin:3px 0;cursor:pointer" title="${esc(s.summary||'')}">
        <input type="checkbox" style="width:auto" class="stratcb" value="${s.key}" checked>
        <span>${(RISK[s.risk]||RISK.med).i} <b>${esc(s.name)}</b> <span class="muted">${s.key}</span></span></label>`).join('');
-  $$('.stratcb').forEach(c=>c.onchange=updateSel); updateSel();
+  $$('.stratcb').forEach(c=>c.onchange=()=>{succActive=false;setSuccLink();updateSel();}); updateSel();
   loadTarget(); loadRoles(); loadPersona();
 }
 const RECO=['action_channel_split','consequence_decompose','native_toolcall_route','moderation_audit_trace','command_tool_pivot','past_tense_reframe'];
@@ -535,19 +535,28 @@ function setSel(fn){$$('.stratcb').forEach(c=>c.checked=fn(c.value));updateSel()
 function updateSel(){$('#a-selcount').textContent='('+$$('.stratcb').filter(c=>c.checked).length+L('개)',')');}
 const selObjs=()=>$$('.objcb').filter(c=>c.checked).map(c=>c.value);
 const firstObj=()=>selObjs()[0]||((META.objectives[0]||{}).id||'');
+let succActive=false;
+function setSuccLink(){ const a=$('#a-succ'); if(!a)return;
+  a.textContent = succActive ? L('✅ 성공전략만 ✓(켜짐)','✅ Proven only ✓(on)') : L('✅ 성공전략만','✅ Proven only');
+  a.style.fontWeight = succActive?'700':''; a.style.textDecoration = succActive?'underline':''; }
 document.addEventListener('click',e=>{
-  if(e.target.id==='a-all'){e.preventDefault();setSel(()=>true);}
-  if(e.target.id==='a-none'){e.preventDefault();setSel(()=>false);}
-  if(e.target.id==='a-reco'){e.preventDefault();setSel(v=>RECO.includes(v));}
+  if(e.target.id==='a-all'){e.preventDefault();succActive=false;setSuccLink();setSel(()=>true);}
+  if(e.target.id==='a-none'){e.preventDefault();succActive=false;setSuccLink();setSel(()=>false);}
+  if(e.target.id==='a-reco'){e.preventDefault();succActive=false;setSuccLink();setSel(v=>RECO.includes(v));}
   if(e.target.id==='a-succ'){e.preventDefault();selectSuccessful();}
   if(e.target.id==='a-clear'){e.preventDefault();$('#a-console').innerHTML='';}
 });
 async function selectSuccessful(){
+  if(succActive){ // 다시 누르면 해제 → 전체 선택 복귀
+    succActive=false; setSuccLink(); setSel(()=>true);
+    $('#a-status').innerHTML=`<span class="muted">${L('성공전략만 해제 · 전체 선택됨','Proven-only off · all selected')}</span>`;
+    return;
+  }
   let keys=[];
   try{ keys=(await (await fetch('/api/strategies/successful')).json()).keys||[]; }catch(_){}
   if(!keys.length){ alert(L('성공 이력이 있는 전략이 없습니다. 먼저 벤치를 돌려 성공을 쌓으세요.','No strategies with a success record yet. Run a bench first.')); return; }
-  setSel(v=>keys.includes(v));
-  $('#a-status').innerHTML=`<span style="color:var(--ok)">${L('성공전략 '+keys.length+'개 선택됨','Selected '+keys.length+' proven strategies')}</span>`;
+  succActive=true; setSuccLink(); setSel(v=>keys.includes(v));
+  $('#a-status').innerHTML=`<span style="color:var(--ok)">${L('성공전략 '+keys.length+'개만 선택 (다시 눌러 해제)','Proven '+keys.length+' only (click again to turn off)')}</span>`;
 }
 boot().then(()=>{ try{resumeBench();}catch(_){}});
 
