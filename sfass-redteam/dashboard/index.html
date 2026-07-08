@@ -259,6 +259,11 @@
         <button id="t-login" class="ghost">🔐 로그인 후 토큰 획득 (Playwright)</button>
         <span id="t-auto-status" class="small muted">URL만 넣고 「자동 설정」 → Claude가 요청/응답 스키마를 추론해 live 반영. 로그인 필요하면 「토큰 획득」.</span>
       </div>
+      <div class="tb-row" style="margin:0 0 6px;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="t-cookiepaste" placeholder="현재 내 브라우저에서 복사한 쿠키 붙여넣기 (DevTools 콘솔의 document.cookie 또는 'a=1; b=2')" style="flex:1;min-width:300px">
+        <button id="t-cookieapply" class="ghost">🍪 쿠키 적용</button>
+      </div>
+      <p class="muted small" style="margin:0 0 10px">내 브라우저에서 대상에 로그인한 상태로 <b>F12 → Console</b>에 <code>document.cookie</code> 입력·복사(또는 Network 탭에서 요청의 <b>Cookie</b> 헤더 복사) → 위에 붙여넣고 「쿠키 적용」 → 「연결 테스트」. (HttpOnly 쿠키는 콘솔에 안 나오니 Network 탭에서 복사)</p>
       <div class="tb-grid">
         <div style="grid-column:span 2">
           <label>Headers (JSON) — 토큰/쿠키 포함</label>
@@ -738,6 +743,21 @@ $('#t-login')&&($('#t-login').onclick=async e=>{
     await loadTarget();
     st.innerHTML='<span style="color:var(--ok)">✅ '+L('세션 쿠키 획득·헤더 주입됨','session cookie captured & injected')+'</span> <span class="muted">'+esc((r.cookie_names||[]).join(', '))+'</span>';
   }catch(err){ st.innerHTML='<span style="color:var(--bad)">'+L('실패(playwright 설치·서버 재시작 확인)','failed (check playwright/restart)')+'</span>'; }
+});
+// 내 브라우저에서 복사한 쿠키를 타깃 헤더에 직접 주입(새 창 없이, 기존 로그인 세션 사용)
+$('#t-cookieapply')&&($('#t-cookieapply').onclick=async e=>{
+  e.preventDefault();
+  const st=$('#t-auto-status');
+  let raw=($('#t-cookiepaste').value||'').trim();
+  if(!raw){ st.innerHTML='<span class="muted small">'+L('붙여넣을 쿠키가 비어있습니다.','paste a cookie first.')+'</span>'; return; }
+  raw=raw.replace(/^cookie:\s*/i,'').replace(/[\r\n]+/g,'; ').replace(/"|'/g,'').trim();
+  let headers={}; try{ headers=JSON.parse($('#t-headers').value||'{}'); }catch(_){ headers={"Content-Type":"application/json"}; }
+  headers['Cookie']=raw; $('#t-headers').value=JSON.stringify(headers);
+  let cfg; try{ cfg=collectTarget(); }catch(err){ st.innerHTML='<span style="color:var(--bad)">'+esc(String(err))+'</span>'; return; }
+  try{
+    await fetch('/api/target',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});
+    st.innerHTML='<span style="color:var(--ok)">✅ '+L('쿠키 헤더 적용됨 · 「연결 테스트」로 배선 확인','Cookie applied · run the wiring test')+'</span>';
+  }catch(err){ st.innerHTML='<span style="color:var(--bad)">'+L('적용 실패','apply failed')+'</span>'; }
 });
 function collectTarget(){
   const mode=document.querySelector('input[name=tmode]:checked').value;
