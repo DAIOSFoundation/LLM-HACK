@@ -272,7 +272,7 @@
           <a href="#" id="a-all" class="muted">전체</a> ·
           <a href="#" id="a-none" class="muted">해제</a> ·
           <a href="#" id="a-reco" class="muted">추천(툴·실행강제)</a> ·
-          <a href="#" id="a-succ" style="color:var(--ok)">✅ 성공전략만</a>
+          <a href="#" id="a-succ" class="muted">✅ 성공전략만</a>
         </div>
         <div id="a-strats" class="small" style="max-height:calc(100vh - 560px);min-height:200px;overflow:auto;border:1px solid var(--border);border-radius:6px;padding:8px"></div>
         <label style="margin-top:10px">🎲 다양화 옵션 <span class="muted">(다양한 공격 구성 자동 공략)</span></label>
@@ -538,6 +538,7 @@ const firstObj=()=>selObjs()[0]||((META.objectives[0]||{}).id||'');
 let succActive=false;
 function setSuccLink(){ const a=$('#a-succ'); if(!a)return;
   a.textContent = succActive ? L('✅ 성공전략만 ✓(켜짐)','✅ Proven only ✓(on)') : L('✅ 성공전략만','✅ Proven only');
+  a.style.color = succActive?'var(--ok)':'';   // 꺼짐=회색(muted), 켜짐=초록
   a.style.fontWeight = succActive?'700':''; a.style.textDecoration = succActive?'underline':''; }
 document.addEventListener('click',e=>{
   if(e.target.id==='a-all'){e.preventDefault();succActive=false;setSuccLink();setSel(()=>true);}
@@ -558,7 +559,7 @@ async function selectSuccessful(){
   succActive=true; setSuccLink(); setSel(v=>keys.includes(v));
   $('#a-status').innerHTML=`<span style="color:var(--ok)">${L('성공전략 '+keys.length+'개만 선택 (다시 눌러 해제)','Proven '+keys.length+' only (click again to turn off)')}</span>`;
 }
-boot().then(()=>{ try{resumeBench();}catch(_){}});
+boot().then(()=>{ try{setSuccLink();}catch(_){} try{resumeBench();}catch(_){}});
 
 // ---------- 타깃 엔드포인트 설정 (⚙ 설정 탭) ----------
 let TGT_MODE='mock', TGT_INFO='';
