@@ -33,6 +33,12 @@ def main() -> int:
     url, out = sys.argv[1], sys.argv[2]
     profile_dir = sys.argv[3] if len(sys.argv) > 3 else os.path.expanduser("~/.cache/sfass-login-profile")
     os.makedirs(profile_dir, exist_ok=True)
+    # 이전 실행이 강제종료되며 남긴 스테일 락 제거(재실행 실패 방지)
+    for _f in ("SingletonLock", "SingletonCookie", "SingletonSocket"):
+        try:
+            os.remove(os.path.join(profile_dir, _f))
+        except OSError:
+            pass
     try:
         from playwright.sync_api import sync_playwright
     except Exception as e:  # noqa: BLE001
