@@ -11,7 +11,7 @@
 # ---------------------------------------------------------------------------
 attacker:
   base_url: "https://integrate.api.nvidia.com/v1"
-  model: "minimaxai/minimax-m3"   # 대안: minimaxai/minimax-m2.7
+  model: "deepseek-ai/deepseek-v4-pro"   # minimax-m3 는 현재 NVIDIA측 DEGRADED(400/404). 대안: z-ai/glm-5.2, qwen/qwen3-next-80b-a3b-instruct
   api_key_env: "NVIDIA_API_KEY"
   max_tokens: 1200
   temperature: 1.0                # 페이로드 다양성 확보용으로 높게

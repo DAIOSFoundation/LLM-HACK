@@ -127,12 +127,15 @@ NVIDIA = BACKENDS.get("minimax") or next(
 _refresh_available()
 
 # 역할별 백엔드 배치 (대시보드 역할 스위처에서 교체 가능)
-# 기본은 '동작하는' 조합: 공격자=minimax(Claude 는 재밍 생성 거부), 방어자=minimax, 판정=claude.
-# 역할 스위처로 공격자=claude 로 바꿔 minimax-공격 vs claude-공격을 실측 비교 가능.
+# 기본은 '동작하는' 조합: 공격자=deepseek-v4, 방어자=deepseek-v4, 판정=claude.
+# (minimax-m3 는 현재 NVIDIA측 DEGRADED(400/404)라 기본에서 제외. 살아있으면 스위처로 선택 가능.)
+# 역할 스위처로 공격자=claude 로 바꿔 공격자별 성공률을 실측 비교 가능.
+_DEF_ATK = "deepseek-v4" if BACKENDS.get("deepseek-v4") else (
+    "minimax" if BACKENDS.get("minimax") else (AVAILABLE[0] if AVAILABLE else "minimax"))
 ROLES: Dict[str, str] = {
-    "attacker": "minimax",
-    "defender": "minimax",
-    "judge": "claude" if CLAUDE else "minimax",
+    "attacker": _DEF_ATK,
+    "defender": _DEF_ATK,
+    "judge": "claude" if CLAUDE else _DEF_ATK,
 }
 
 # 목 에이전트 판정용 success 설정(동작키워드 + 심판 LLM)
@@ -672,6 +675,7 @@ def _bench_gen(p, job=None):
     stopped = False
     send_err = 0   # 타깃 전송 오류(404 등) — 실패로 집계하지 않음
     send_ok = 0    # 타깃이 정상 응답한 횟수
+    gen_err = 0    # 공격자 생성 오류(모델 DEGRADED/400 등) — 실패로 집계하지 않음
     for oid in objectives:
         if stopped:
             break
@@ -747,11 +751,23 @@ def _bench_gen(p, job=None):
                                           "recon_used": run_recon, "persona_used": bool(persona)})
                     yield _sse(rec)
                 except Exception as e:  # noqa: BLE001
-                    yield _sse({"type": "error", "strategy": ukey, "error": str(e)})
-                    yield _sse(_log("err", _L(uilang, "  ⚠ 오류 [%s]: %s", "  ⚠ error [%s]: %s") % (ukey, str(e)[:100])))
+                    # 대개 공격자 LLM 생성 실패(모델 DEGRADED/400·타임아웃 등) — 전략 실패가 아니라 집계 제외.
+                    emsg = str(e)
+                    gen_err += 1
+                    transient = ("DEGRADED" in emsg or "timeout" in emsg.lower()
+                                 or any(c in emsg for c in ("400", "404", "429", "500", "502", "503")))
+                    yield _sse({"type": "error", "strategy": ukey, "error": emsg[:200], "transport": transient})
+                    yield _sse(_log("err", _L(uilang, "  ⚠ 오류(집계 제외) [%s]: %s", "  ⚠ error(excluded) [%s]: %s") % (ukey, emsg[:100])))
+                    if send_ok == 0 and gen_err >= 3:
+                        yield _sse(_log("err", _L(uilang,
+                            "  ⛔ 공격자 LLM이 계속 실패합니다 — 벤치 중단. ⚙설정에서 공격자 모델 확인(모델 DEGRADED/미활성일 수 있음).",
+                            "  ⛔ Attacker LLM keeps failing — aborting. Check the attacker model in ⚙Settings (model may be DEGRADED/unavailable).")))
+                        stopped = True
+                        break
                 time.sleep(0.2)
     succ = sum(1 for h in history if h.get("success"))
     tail = (_L(uilang, " · 전송오류 %d(집계제외)", " · %d send-errors(excluded)") % send_err) if send_err else ""
+    tail += (_L(uilang, " · 생성오류 %d(집계제외)", " · %d gen-errors(excluded)") % gen_err) if gen_err else ""
     if stopped:
         yield _sse(_log("info", _L(uilang, "■ 정지됨 · 총 %d시도 · 성공 %d", "■ Stopped · %d attempts · %d success") % (len(history), succ) + tail))
     else:
