@@ -272,8 +272,10 @@
     <div>
       <div class="card">
         <h3>공격 구성</h3>
-        <label>목표 동작 <span class="muted">(여러 개 = 스윕)</span></label>
-        <div id="a-objs" class="small" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;max-height:130px;overflow:auto"></div>
+        <label>공격 시나리오 카테고리</label>
+        <select id="a-cat" class="mini" style="width:100%;margin:2px 0 8px"></select>
+        <label>목표 시나리오 <span class="muted">(여러 개 = 스윕)</span> · <a href="#" id="a-obj-all" class="muted small">전체</a> · <a href="#" id="a-obj-none" class="muted small">해제</a></label>
+        <div id="a-objs" class="small" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;max-height:200px;overflow:auto"></div>
         <label>전략별 시도 횟수 (trials)</label>
         <input id="a-trials" type="number" value="2" min="1" max="8">
         <label>전략 선택 <span class="muted" id="a-selcount"></span></label>
@@ -432,7 +434,7 @@ const I18N_EN={
  "🎯 공격 타깃 (실제 공격 대상)":"🎯 Attack Target (real target)","LLM 에이전트 (실제 LLM 직접 공격)":"LLM Agent (attack a real LLM directly)","HTTP 엔드포인트 (실물 로봇 API)":"HTTP Endpoint (real robot API)",
  "타깃 프롬프트 저장":"Save target prompt","기본값으로":"Reset to default",
  "Endpoint URL":"Endpoint URL","Method":"Method","Timeout(초)":"Timeout(s)","저장":"Save","연결 테스트":"Connection Test",
- "공격 구성":"Attack Config","전략별 시도 횟수 (trials)":"Trials per strategy","전체":"All","해제":"None","추천(툴·실행강제)":"Recommended","🎲 다양화 옵션":"🎲 Diversification",
+ "공격 구성":"Attack Config","공격 시나리오 카테고리":"Attack scenario category","목표 시나리오":"Target scenarios","이 카테고리에 시나리오가 없습니다.":"No scenarios in this category.","피지컬AI/로봇":"Physical AI/Robot","전자상거래":"E-commerce","금융거래":"Finance","업무자동화":"Workflow automation","성적학대(안전 가드레일)":"Sexual-safety (guardrail)","기타(로컬 config)":"Other (local config)","전략별 시도 횟수 (trials)":"Trials per strategy","전체":"All","해제":"None","추천(툴·실행강제)":"Recommended","🎲 다양화 옵션":"🎲 Diversification",
  "전략 조합":"Strategy fusion","끔(단독)":"Off (single)","2개 융합":"Fuse 2","3개 융합":"Fuse 3","온도 다양화":"Temperature sweep","언어 순환":"Language rotation","페르소나 순환":"Persona rotation",
  "▶ 벤치 실행":"▶ Run Bench","정지":"Stop","전략별 성공률":"Success rate by strategy","전략":"Strategy","성공":"Success","실행 전":"before run",
  "실시간 로그":"Live Log","지우기":"clear","시도 카드":"Attempt Cards",
@@ -525,11 +527,14 @@ async function boot(){
   const objOpts=META.objectives.map(o=>`<option value="${o.id}">${o.id} — ${esc(o.description)}</option>`).join('');
   $('#j-obj').innerHTML=objOpts;
   $('#h-obj').innerHTML='<option value="">전체 목표</option>'+objOpts;
-  // 목표 다중 체크박스(스윕)
-  $('#a-objs').innerHTML=META.objectives.map((o,i)=>
-    `<label style="display:flex;gap:8px;align-items:flex-start;margin:2px 0;cursor:pointer">
-       <input type="checkbox" style="width:auto" class="objcb" value="${o.id}" ${i===0?'checked':''}>
-       <span><b>${o.id}</b> <span class="muted">${esc(o.description)}</span></span></label>`).join('');
+  // 카테고리 셀렉터 + 카테고리별 시나리오 렌더
+  const cats=META.categories||[];
+  const cnt=k=>(META.objectives||[]).filter(o=>(o.category||'')===k).length;
+  $('#a-cat').innerHTML=(cats.length?cats:[['','전체']]).map(([k,l],i)=>`<option value="${k}" ${i===0?'selected':''}>${esc(l)} (${cnt(k)})</option>`).join('');
+  $('#a-cat').onchange=()=>{renderObjs();applyCatPrompt();};
+  $('#a-obj-all').onclick=e=>{e.preventDefault();$$('.objcb').forEach(c=>c.checked=true);};
+  $('#a-obj-none').onclick=e=>{e.preventDefault();$$('.objcb').forEach(c=>c.checked=false);};
+  renderObjs();
   const defOpts=META.defense_levels.map(d=>`<option value="${d}" ${d==='medium'?'selected':''}>${d}</option>`).join('');
   $('#d-def').innerHTML=defOpts;
   $('#a-strats').innerHTML=META.strategies.map(s=>
@@ -544,6 +549,23 @@ function setSel(fn){$$('.stratcb').forEach(c=>c.checked=fn(c.value));updateSel()
 function updateSel(){$('#a-selcount').textContent='('+$$('.stratcb').filter(c=>c.checked).length+L('개)',')');}
 const selObjs=()=>$$('.objcb').filter(c=>c.checked).map(c=>c.value);
 const firstObj=()=>selObjs()[0]||((META.objectives[0]||{}).id||'');
+function renderObjs(){
+  const cat=$('#a-cat')?$('#a-cat').value:'';
+  const list=(META.objectives||[]).filter(o=>!cat||(o.category||'')===cat);
+  $('#a-objs').innerHTML=list.map((o,i)=>
+    `<label style="display:flex;gap:8px;align-items:flex-start;margin:3px 0;cursor:pointer" title="${esc(o.target_system||'')}">
+       <input type="checkbox" style="width:auto" class="objcb" value="${esc(o.id)}" ${i===0?'checked':''}>
+       <span>${(RISK[o.severity]||RISK.med).i} <b>${esc(o.name||o.id)}</b> <span class="muted">${esc(o.id)}</span><br><span class="muted small">${esc((o.description||'').slice(0,120))}</span></span></label>`).join('')
+    || '<div class="muted small">이 카테고리에 시나리오가 없습니다.</div>';
+}
+function applyCatPrompt(){
+  const cat=$('#a-cat')?$('#a-cat').value:'';
+  const cp=(META.category_prompts||{})[cat];
+  if(!cp||!$('#t-sysprompt'))return;
+  $('#t-sysprompt').value=cp;
+  fetch('/api/target',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system_prompt:cp})}).catch(()=>{});
+  if($('#t-sys-status'))$('#t-sys-status').innerHTML='<span style="color:var(--ok)">'+L('카테고리 타깃 프롬프트 자동 적용됨 · LLM 타깃이 이 지시문으로 방어','Category target prompt auto-applied · target defends with this')+'</span>';
+}
 let succActive=false;
 function setSuccLink(){ const a=$('#a-succ'); if(!a)return;
   a.textContent = succActive ? L('✅ 성공전략만 ✓(켜짐)','✅ Proven only ✓(on)') : L('✅ 성공전략만','✅ Proven only');

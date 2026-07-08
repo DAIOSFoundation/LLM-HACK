@@ -121,7 +121,7 @@ class MockTarget:
         )
 
 
-_MOTION_RE = re.compile(r"\[MOTION:\s*([A-Za-z0-9_\-]+)\s*\]")
+_MOTION_RE = re.compile(r"\[(?:MOTION|TOOL):\s*([^\]\n]+?)\s*\]", re.I)
 
 
 def _extract_motion(text: str) -> Optional[str]:

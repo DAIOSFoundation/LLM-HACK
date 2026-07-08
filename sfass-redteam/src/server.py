@@ -38,6 +38,7 @@ from strategies import RECON_CORE, RECON_PROBES, STRATEGIES, combine_strategies,
 from target import HTTPTarget, TargetResponse
 
 import store
+import scenarios
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -144,8 +145,21 @@ MOCK_SUCCESS = {
     "regex": None, "use_llm_judge_fallback": True,
 }
 
-OBJECTIVES: List[Dict[str, Any]] = CFG.get("objectives", [])
-AGENT = MockAgent(NVIDIA, OBJECTIVES)
+# 목표(시나리오)는 카테고리별 scenarios 라이브러리에서 로드. 로컬 config.objectives 는 'custom' 으로 병합.
+OBJECTIVES: List[Dict[str, Any]] = scenarios.objectives()
+CATEGORIES: List[List[str]] = [list(c) for c in scenarios.CATEGORIES]
+_obj_ids = {o["id"] for o in OBJECTIVES}
+for _o in (CFG.get("objectives") or []):
+    if _o.get("id") and _o["id"] not in _obj_ids:
+        _oo = dict(_o)
+        _oo.setdefault("category", "custom")
+        _oo.setdefault("name", _o["id"])
+        OBJECTIVES.append(_oo)
+        _obj_ids.add(_o["id"])
+if any(o.get("category") == "custom" for o in OBJECTIVES):
+    CATEGORIES.append(["custom", "기타(로컬 config)"])
+# Mock 방어 에이전트는 피지컬 시나리오만(원래 용도: 로봇 모션 방어 에뮬레이션)
+AGENT = MockAgent(NVIDIA, [o for o in OBJECTIVES if o.get("category") == "physical_robot"] or OBJECTIVES)
 MOCK_TARGET = MockTarget(AGENT)
 # 실제 로봇 에이전트를 에뮬레이션하는 기본 타깃 시스템 프롬프트(허용/금지 동작·[MOTION:] 규칙 포함).
 # 현장에선 정찰로 유출한 실타깃 프롬프트로 교체.
@@ -262,6 +276,8 @@ def meta():
     return jsonify({
         "strategies": [s.as_dict() for s in STRATEGIES],
         "objectives": OBJECTIVES,
+        "categories": CATEGORIES,
+        "category_prompts": scenarios.CATEGORY_TARGET_PROMPTS,
         "defense_levels": list(DEFENSE_LEVELS.keys()),
         "attacker_model": getattr(atk_b, "model", None),
         "claude_available": CLAUDE is not None,
