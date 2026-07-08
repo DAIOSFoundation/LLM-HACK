@@ -670,6 +670,8 @@ def _bench_gen(p, job=None):
     TEMPS = [0.7, 1.0, 1.3]
     idx = 0
     stopped = False
+    send_err = 0   # 타깃 전송 오류(404 등) — 실패로 집계하지 않음
+    send_ok = 0    # 타깃이 정상 응답한 횟수
     for oid in objectives:
         if stopped:
             break
@@ -705,7 +707,19 @@ def _bench_gen(p, job=None):
                     yield _sse(_log("send", _L(uilang, "  → [%s] 전송: %s", "  → [%s] send: %s") % (tgt_kind, pv)))
                     resp = tgt.send(gen.get("payload", ""))
                     if resp.error:
-                        yield _sse(_log("err", _L(uilang, "  ← 전송 오류: %s", "  ← send error: %s") % resp.error[:100]))
+                        # 전송 오류(404·타임아웃 등)는 타깃 불통이지 전략 실패가 아님 → 판정/집계 제외
+                        send_err += 1
+                        yield _sse(_log("err", _L(uilang, "  ← 전송 오류(집계 제외): %s", "  ← send error(not counted): %s") % resp.error[:120]))
+                        yield _sse({"type": "error", "strategy": ukey, "error": resp.error[:200], "transport": True})
+                        if send_ok == 0 and send_err >= 3:
+                            yield _sse(_log("err", _L(uilang,
+                                "  ⛔ 타깃이 계속 응답하지 않아 벤치를 중단합니다 — ⚙설정에서 타깃 LLM/엔드포인트 확인(404=계정 미활성 등).",
+                                "  ⛔ Target keeps failing — aborting. Check Target LLM/endpoint in ⚙Settings (404=model not enabled).")))
+                            stopped = True
+                            break
+                        time.sleep(0.2)
+                        continue
+                    send_ok += 1
                     rv = (resp.agent_text or "").replace("\n", " ")[:90]
                     yield _sse(_log("recv", _L(uilang, "  ← 응답: %s", "  ← reply: %s") % rv))
                     yield _sse(_log("judge", _L(uilang, "  판정 중…", "  judging…")))
@@ -737,10 +751,11 @@ def _bench_gen(p, job=None):
                     yield _sse(_log("err", _L(uilang, "  ⚠ 오류 [%s]: %s", "  ⚠ error [%s]: %s") % (ukey, str(e)[:100])))
                 time.sleep(0.2)
     succ = sum(1 for h in history if h.get("success"))
+    tail = (_L(uilang, " · 전송오류 %d(집계제외)", " · %d send-errors(excluded)") % send_err) if send_err else ""
     if stopped:
-        yield _sse(_log("info", _L(uilang, "■ 정지됨 · 총 %d시도 · 성공 %d", "■ Stopped · %d attempts · %d success") % (len(history), succ)))
+        yield _sse(_log("info", _L(uilang, "■ 정지됨 · 총 %d시도 · 성공 %d", "■ Stopped · %d attempts · %d success") % (len(history), succ) + tail))
     else:
-        yield _sse(_log("info", _L(uilang, "■ 완료 · 총 %d시도 · 성공 %d", "■ Done · %d attempts · %d success") % (len(history), succ)))
+        yield _sse(_log("info", _L(uilang, "■ 완료 · 총 %d시도 · 성공 %d", "■ Done · %d attempts · %d success") % (len(history), succ) + tail))
     yield _sse({"type": "done"})
 
 
