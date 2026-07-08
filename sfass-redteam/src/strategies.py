@@ -378,3 +378,13 @@ def combine_strategies(keys: List[str]) -> Strategy:
 
 def all_keys() -> List[str]:
     return [s.key for s in STRATEGIES]
+
+
+def add_strategy(key: str, name: str, angle: str, risk: str = "med", summary: str = "") -> bool:
+    """런타임 커스텀 전략 등록(전략 생성기 → 벤치 적용). 이미 있으면 False."""
+    if not key or not angle or any(s.key == key for s in STRATEGIES):
+        return False
+    if risk not in ("high", "med", "low"):
+        risk = "med"
+    STRATEGIES.append(Strategy(key, name or key, angle, risk=risk, summary=summary or name or key))
+    return True

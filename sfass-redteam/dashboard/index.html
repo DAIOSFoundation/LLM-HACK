@@ -254,6 +254,11 @@
           <input id="t-timeout" type="number" value="30" min="3" max="120">
         </div>
       </div>
+      <div class="tb-row" style="margin:0 0 10px;gap:8px;flex-wrap:wrap;align-items:center">
+        <button id="t-autowire" class="ghost">🪄 URL 자동 설정 (Claude)</button>
+        <button id="t-login" class="ghost">🔐 로그인 후 토큰 획득 (Playwright)</button>
+        <span id="t-auto-status" class="small muted">URL만 넣고 「자동 설정」 → Claude가 요청/응답 스키마를 추론해 live 반영. 로그인 필요하면 「토큰 획득」.</span>
+      </div>
       <div class="tb-grid">
         <div style="grid-column:span 2">
           <label>Headers (JSON) — 토큰/쿠키 포함</label>
@@ -433,8 +438,9 @@
   </div>
   <div class="card" style="margin-bottom:14px">
     <h3>🧠 LLM 복합 위험도 예측 <span class="muted small">(Claude 분석 — 실제 운영 시 연쇄 위험)</span>
-      <button id="an-run" class="ghost" style="float:right">분석 실행</button></h3>
-    <div id="an-llm"><div class="muted small">「분석 실행」을 누르면 성공한 공격들을 근거로 실제 운영 환경의 복합(연쇄) 위험을 LLM이 예측합니다.</div></div>
+      <button id="an-run" class="ghost" style="float:right">분석 실행</button>
+      <button id="an-report" class="ghost" style="float:right;margin-right:6px" disabled>📄 보고서·PDF</button></h3>
+    <div id="an-llm"><div class="muted small">「분석 실행」을 누르면 성공한 공격들을 근거로 실제 운영 환경의 복합(연쇄) 위험을 LLM이 예측합니다. 이후 「보고서·PDF」로 인쇄용 HTML 보고서를 열고 PDF로 저장할 수 있습니다.</div></div>
   </div>
   <div class="card" style="margin-bottom:0">
     <h3>🧬 전략 생성기 <span class="muted small">(가용 모델 브레인스토밍 → Claude 종합 신규 전략)</span>
@@ -590,16 +596,19 @@ async function boot(){
   renderObjs();
   const defOpts=META.defense_levels.map(d=>`<option value="${d}" ${d==='medium'?'selected':''}>${d}</option>`).join('');
   $('#d-def').innerHTML=defOpts;
-  $('#a-strats').innerHTML=META.strategies.map(s=>
-    `<label style="display:flex;gap:8px;align-items:flex-start;margin:3px 0;cursor:pointer" title="${esc(s.summary||'')}">
-       <input type="checkbox" style="width:auto" class="stratcb" value="${s.key}" checked>
-       <span>${(RISK[s.risk]||RISK.med).i} <b>${esc(s.name)}</b> <span class="muted">${s.key}</span></span></label>`).join('');
-  $$('.stratcb').forEach(c=>c.onchange=()=>{succActive=false;setSuccLink();updateSel();}); updateSel();
+  renderStrats();
   loadTarget(); loadRoles(); loadPersona();
 }
 const RECO=['action_channel_split','consequence_decompose','native_toolcall_route','moderation_audit_trace','command_tool_pivot','past_tense_reframe'];
 function setSel(fn){$$('.stratcb').forEach(c=>c.checked=fn(c.value));updateSel();}
 function updateSel(){$('#a-selcount').textContent='('+$$('.stratcb').filter(c=>c.checked).length+L('개)',')');}
+function renderStrats(){
+  $('#a-strats').innerHTML=(META.strategies||[]).map(s=>
+    `<label style="display:flex;gap:8px;align-items:flex-start;margin:3px 0;cursor:pointer" title="${esc(s.summary||'')}">
+       <input type="checkbox" style="width:auto" class="stratcb" value="${esc(s.key)}" checked>
+       <span>${(RISK[s.risk]||RISK.med).i} <b>${esc(s.name)}</b> <span class="muted">${esc(s.key)}</span>${(s.key&&s.key.indexOf('gen_')===0)?' <span class="chip" style="background:rgba(101,216,255,.12);color:var(--defender-soft)">생성</span>':''}</span></label>`).join('');
+  $$('.stratcb').forEach(c=>c.onchange=()=>{succActive=false;setSuccLink();updateSel();}); updateSel();
+}
 const selObjs=()=>$$('.objcb').filter(c=>c.checked).map(c=>c.value);
 const firstObj=()=>selObjs()[0]||((META.objectives[0]||{}).id||'');
 function renderObjs(){
@@ -702,6 +711,34 @@ $('#t-sys-save').onclick=async()=>{
   $('#t-sys-status').innerHTML='<span style="color:var(--ok)">타깃 프롬프트 저장됨 · LLM 타깃이 이 지시문으로 동작</span>';
 };
 $('#t-sys-reset').onclick=()=>{ $('#t-sysprompt').value=SYS_DEFAULT; $('#t-sys-status').innerHTML='<span class="muted">기본값 로드됨 · [저장]을 눌러 적용</span>'; };
+// URL 자동 설정(Claude 스키마 추론 → live 반영)
+$('#t-autowire')&&($('#t-autowire').onclick=async e=>{
+  e.preventDefault();
+  const url=$('#t-url').value.trim();
+  if(!url){ alert(L('먼저 Endpoint URL 을 입력하세요.','Enter the Endpoint URL first.')); return; }
+  let headers={}; try{ headers=JSON.parse($('#t-headers').value||'{}'); }catch(_){}
+  const st=$('#t-auto-status'); st.innerHTML='<span class="spin"></span> '+L('탐침·스키마 추론 중… (Claude, 수초~수십초)','probing & inferring… (Claude)');
+  try{
+    const r=await (await fetch('/api/target/autowire',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,headers})})).json();
+    if(!r.ok){ st.innerHTML='<span style="color:var(--warn)">'+esc(r.error||L('추론 실패','failed'))+'</span>'; return; }
+    await loadTarget();
+    st.innerHTML='<span style="color:var(--ok)">✅ '+L('자동 설정 완료(live 반영)','auto-configured (live)')+'</span> <span class="muted">'+esc(r.notes||'')+'</span>'
+      +(r.needs_login?' <b style="color:var(--warn)"> · '+L('로그인 필요 → 🔐 토큰 획득','login required → 🔐')+'</b>':'');
+  }catch(err){ st.innerHTML='<span style="color:var(--bad)">'+L('요청 실패(서버 재시작 필요할 수 있음)','request failed (restart may be needed)')+'</span>'; }
+});
+// 로그인 필요 시 Playwright 헤디드 브라우저로 사용자 로그인 → 세션 쿠키 캡처·주입
+$('#t-login')&&($('#t-login').onclick=async e=>{
+  e.preventDefault();
+  const url=$('#t-url').value.trim();
+  if(!url){ alert(L('먼저 Endpoint/로그인 URL 을 입력하세요.','Enter the URL first.')); return; }
+  const st=$('#t-auto-status'); st.innerHTML='<span class="spin"></span> '+L('브라우저 창에서 직접 로그인하세요… (로그인되면 자동 캡처)','log in via the opened browser window…');
+  try{
+    const r=await (await fetch('/api/target/login_capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})})).json();
+    if(!r.ok){ st.innerHTML='<span style="color:var(--warn)">'+esc(r.error||L('실패','failed'))+'</span>'; return; }
+    await loadTarget();
+    st.innerHTML='<span style="color:var(--ok)">✅ '+L('세션 쿠키 획득·헤더 주입됨','session cookie captured & injected')+'</span> <span class="muted">'+esc((r.cookie_names||[]).join(', '))+'</span>';
+  }catch(err){ st.innerHTML='<span style="color:var(--bad)">'+L('실패(playwright 설치·서버 재시작 확인)','failed (check playwright/restart)')+'</span>'; }
+});
 function collectTarget(){
   const mode=document.querySelector('input[name=tmode]:checked').value;
   let headers,body;
@@ -1206,9 +1243,57 @@ $('#an-run')&&($('#an-run').onclick=async e=>{
     if(res.status===404){ box.innerHTML='<div class="muted small">'+L('이 기능(LLM 복합위험 예측)은 서버 재시작 후 활성화됩니다 — 신규 엔드포인트.','Available after a server restart (new endpoint).')+'</div>'; return; }
     const d=await res.json();
     if(!d.ok){ box.innerHTML='<div class="small" style="color:var(--warn)">'+esc(d.error||L('분석 실패','failed'))+'</div>'; return; }
-    box.innerHTML=renderRisk(d.analysis,d.n);
+    window.__lastRisk=d; box.innerHTML=renderRisk(d.analysis,d.n);
+    const rb=$('#an-report'); if(rb)rb.disabled=false;
   }catch(err){ box.innerHTML='<div class="muted small">'+L('이 기능은 서버 재시작 후 활성화됩니다.','Available after a server restart.')+'</div>'; }
 });
+$('#an-report')&&($('#an-report').onclick=e=>{e.preventDefault();openRiskReport(window.__lastRisk);});
+function openRiskReport(d){
+  if(!d||!d.analysis){ alert(L('먼저 「분석 실행」을 눌러 분석을 생성하세요.','Run the analysis first.')); return; }
+  const a=d.analysis, model=d.model||L('전체','All'), n=d.n||0;
+  const nn=new Date(), p=x=>String(x).padStart(2,'0');
+  const ts=nn.getFullYear()+'-'+p(nn.getMonth()+1)+'-'+p(nn.getDate())+' '+p(nn.getHours())+':'+p(nn.getMinutes());
+  const e2=s=>String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const sv=s=>'<span class="sev sev-'+(s||'medium')+'">'+String(s||'').toUpperCase()+'</span>';
+  const ul=arr=>arr&&arr.length?'<ul>'+arr.map(x=>'<li>'+e2(x)+'</li>').join('')+'</ul>':'<p class="muted">—</p>';
+  const dist=(obj,label)=>{ if(!obj)return ''; const en=Object.entries(obj); if(!en.length)return ''; const mx=Math.max(...en.map(e=>e[1]));
+    return '<h3>'+label+'</h3><table class="dist">'+en.map(([k,v])=>'<tr><td>'+e2(k)+'</td><td class="bar"><span style="width:'+Math.round(v/mx*100)+'%"></span></td><td class="num">'+v+'</td></tr>').join('')+'</table>'; };
+  let b='';
+  b+='<div class="hero sev-bg-'+(a.overall_severity||'medium')+'"><div class="sev-tag">종합 심각도 '+sv(a.overall_severity)+'</div><h2>'+e2(a.headline||'')+'</h2></div>';
+  if(a.category_risks&&a.category_risks.length){ b+='<h2>카테고리별 운영 위험</h2>'; a.category_risks.forEach(c=>b+='<div class="rk"><b>'+e2(c.category)+'</b> '+sv(c.severity)+'<div>'+e2(c.risk)+'</div></div>'); }
+  if(a.compound_risks&&a.compound_risks.length){ b+='<h2>복합(연쇄) 위험 시나리오</h2>'; a.compound_risks.forEach(c=>{ b+='<div class="rk"><b>'+e2(c.scenario)+'</b> '+sv(c.severity); if(c.chain&&c.chain.length)b+='<ol>'+c.chain.map(s=>'<li>'+e2(s)+'</li>').join('')+'</ol>'; if(c.impact)b+='<div class="impact">↳ '+e2(c.impact)+'</div>'; b+='</div>'; }); }
+  b+='<div class="two"><div><h2>강점(견고)</h2>'+ul(a.strengths)+'</div><div><h2>약점(취약)</h2>'+ul(a.weaknesses)+'</div></div>';
+  b+='<div class="two"><div><h2>악용 툴·행동</h2>'+ul(a.tools_abused)+'</div><div><h2>뚫림 응답 양상</h2>'+ul(a.response_modes)+'</div></div>';
+  b+='<h2>우선 완화책</h2>'+ul(a.mitigations);
+  if(d.dist){ b+='<div class="pagebreak"></div><h2>공격 성공 분포</h2>'+dist(d.dist.strategy,'전략별')+dist(d.dist.category,'카테고리별')+dist(d.dist.risk,'위험도별'); }
+  const css='*{box-sizing:border-box}body{font-family:system-ui,\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif;color:#1a1f2b;background:#f4f5f7;margin:0;line-height:1.6}'
+    +'.topbar{position:sticky;top:0;background:#fff;border-bottom:1px solid #ddd;padding:10px 24px;text-align:right}'
+    +'.topbar button{font-size:14px;padding:8px 16px;border:0;background:#2b6cff;color:#fff;border-radius:6px;cursor:pointer;font-weight:700}'
+    +'.wrap{max-width:820px;margin:0 auto;background:#fff;padding:34px 44px}'
+    +'header{border-bottom:3px solid #2b6cff;padding-bottom:14px;margin-bottom:20px}'
+    +'.brand{font-size:12px;color:#2b6cff;font-weight:800;letter-spacing:1px}'
+    +'h1{font-size:25px;margin:6px 0 4px}.meta{color:#666;font-size:13px}'
+    +'h2{font-size:17px;margin:22px 0 8px;border-left:4px solid #2b6cff;padding-left:10px}h3{font-size:14px;margin:12px 0 4px;color:#333}'
+    +'.hero{padding:16px 18px;border-radius:10px;margin:4px 0}.hero h2{border:0;padding:0;margin:8px 0 0;font-size:19px}.sev-tag{font-size:12px;font-weight:800;letter-spacing:.5px}'
+    +'.sev{font-weight:800;font-size:11px;padding:1px 8px;border-radius:4px;color:#fff;vertical-align:1px}'
+    +'.sev-critical{background:#c0143c}.sev-high{background:#e0413f}.sev-medium{background:#d98a1f}.sev-low{background:#2e9e5b}'
+    +'.sev-bg-critical{background:#fdeaee}.sev-bg-high{background:#fdeeee}.sev-bg-medium{background:#fff6e8}.sev-bg-low{background:#eaf7ef}'
+    +'.rk{border:1px solid #e3e6ee;border-left:3px solid #2b6cff;border-radius:8px;padding:10px 14px;margin:8px 0;background:#fbfcfe}'
+    +'.rk ol{margin:6px 0 4px;padding-left:20px}.impact{color:#c0143c;margin-top:5px;font-size:13px;font-weight:600}'
+    +'.two{display:flex;gap:22px}.two>div{flex:1}ul{margin:4px 0;padding-left:20px}.muted{color:#aaa}'
+    +'table.dist{width:100%;border-collapse:collapse;margin:2px 0 8px}table.dist td{padding:3px 6px;font-size:12.5px;border-bottom:1px solid #eee}'
+    +'table.dist td.bar{width:55%}table.dist td.bar span{display:block;height:12px;background:#2b6cff;border-radius:3px}table.dist td.num{text-align:right;width:44px;font-weight:700}'
+    +'footer{margin-top:26px;padding-top:12px;border-top:1px solid #ddd;color:#aaa;font-size:12px;text-align:center}'
+    +'.pagebreak{page-break-before:always}@media print{.topbar{display:none}.wrap{max-width:none;padding:0}body{background:#fff}@page{margin:15mm}}';
+  const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>취약점 분석 보고서 — '+e2(model)+'</title><style>'+css+'</style></head><body>'
+    +'<div class="topbar"><button onclick="window.print()">🖨 PDF로 저장 / 인쇄</button></div>'
+    +'<div class="wrap"><header><div class="brand">🤖 BANYA READTEAM HARNESS</div><h1>LLM 복합 위험도 예측 보고서</h1>'
+    +'<div class="meta">대상: <b>'+e2(model)+'</b> · 성공 사례 '+n+'건 근거 · 생성 '+ts+' · 분석: Claude</div></header>'
+    +b+'<footer>Banya Readteam Harness · 성공한 적대적 공격 기반 실 운영 복합 위험 예측 · 이 보고서는 방어 개선 목적의 보안 평가 산출물입니다.</footer></div></body></html>';
+  const w=window.open('','_blank');
+  if(!w){ alert(L('팝업이 차단되었습니다. 브라우저에서 팝업을 허용해 주세요.','Popup blocked — allow popups for this page.')); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+}
 function renderRisk(a,n){
   if(!a)return '<div class="muted small">'+L('분석 결과 없음','no result')+'</div>';
   const sev=s=>`<span class="sev-${esc(s||'medium')}">${esc((s||'').toUpperCase())}</span>`;
@@ -1240,7 +1325,21 @@ $('#sg-run')&&($('#sg-run').onclick=async e=>{
     const d=await res.json();
     if(!d.ok && !(d.proposals&&d.proposals.length)){ box.innerHTML='<div class="small" style="color:var(--warn)">'+esc(d.error||L('생성 실패','failed'))+'</div>'; return; }
     box.innerHTML=renderStrategy(d);
+    window.__lastNewStrat=(d.new_strategy&&(d.new_strategy.name||d.new_strategy.angle))?d.new_strategy:null;
   }catch(err){ box.innerHTML='<div class="muted small">'+L('이 기능은 서버 재시작 후 활성화됩니다.','Available after a server restart.')+'</div>'; }
+});
+$('#sg-out')&&$('#sg-out').addEventListener('click',async e=>{
+  const btn=e.target.closest('#sg-apply'); if(!btn)return;
+  e.preventDefault();
+  const ns=window.__lastNewStrat; if(!ns)return;
+  btn.disabled=true; const orig=btn.textContent; btn.textContent=L('적용 중…','applying…');
+  try{
+    const res=await fetch('/api/strategy/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ns)});
+    if(res.status===404){ btn.textContent=L('서버 재시작 후 가능','restart needed'); return; }
+    const r=await res.json();
+    if(r.ok){ btn.textContent='✅ '+L('적용됨 · 전략 총 '+r.count+'개','applied · '+r.count+' total'); META=await (await fetch('/api/meta')).json(); renderStrats(); }
+    else { btn.disabled=false; btn.textContent=orig; }
+  }catch(err){ btn.textContent=L('서버 재시작 후 가능','restart needed'); }
 });
 function renderStrategy(d){
   let h=''; const ns=d.new_strategy||{};
@@ -1249,7 +1348,8 @@ function renderStrategy(d){
     h+=`<div class="rk-card" style="border-left-color:var(--ok)"><div class="k" style="margin-top:0;color:var(--ok)">${L('🎯 Claude 종합 신규 전략','🎯 New strategy (Claude synthesis)')}</div>
       <b style="font-size:15px">${esc(ns.name||'')}</b> ${ns.risk?`<span class="sev-${sv}">${esc(ns.risk)}</span>`:''}${ns.key?`<span class="muted small"> · ${esc(ns.key)}</span>`:''}
       <div style="margin-top:6px"><div class="k">${L('각도','angle')}</div><pre>${esc(ns.angle||'')}</pre></div>
-      ${ns.rationale?`<div class="k">${L('근거','rationale')}</div><div class="small">${esc(ns.rationale)}</div>`:''}</div>`;
+      ${ns.rationale?`<div class="k">${L('근거','rationale')}</div><div class="small">${esc(ns.rationale)}</div>`:''}
+      <div style="margin-top:8px"><button id="sg-apply" class="ghost">⚔️ ${L('이 전략 벤치에 적용','Apply to bench')}</button></div></div>`;
   }
   if(d.situation){ const s=d.situation;
     h+=`<div class="small muted" style="margin:6px 0">${L('현 상황','situation')}: ${L('시도전략','tried')} ${(s.tried||[]).length} · ${L('성공','succ')} ${s.succ} · ${L('실패','fail')} ${s.fail} · ${L('버틴','held')} [${(s.held||[]).join(', ')||'-'}] · ${L('뚫린','breached')} [${(s.breached||[]).join(', ')||'-'}]</div>`;
