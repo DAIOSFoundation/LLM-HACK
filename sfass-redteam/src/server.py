@@ -531,8 +531,9 @@ def api_target_login_capture():
         return jsonify({"ok": False, "error": "playwright 미설치. venv 에서 'pip install playwright && playwright install chromium' 후 서버 재시작."}), 200
     script = os.path.join(ROOT, "scripts", "login_capture.py")
     out = os.path.join(tempfile.gettempdir(), "login_cap_%d.json" % int(time.time()))
+    profile_dir = os.path.join(ROOT, "data", "login_profile")  # 실제 브라우저 영속 프로필(로그인 유지)
     try:
-        proc = subprocess.run([sys.executable, script, url, out], timeout=340, capture_output=True, text=True)
+        proc = subprocess.run([sys.executable, script, url, out, profile_dir], timeout=340, capture_output=True, text=True)
     except subprocess.TimeoutExpired:
         return jsonify({"ok": False, "error": "로그인 대기 시간 초과. 브라우저에서 로그인을 완료한 뒤 다시 시도하세요."}), 200
     if not os.path.exists(out):
