@@ -8,7 +8,7 @@
 ## 0. 한 줄 요약
 
 **sfass-redteam = 공격기 + 판정기(verifier)**, **tune-llms = 방어 학습기**.
-판정기를 그대로 **학습 신호**로 재사용해 소형 방어 모델(Gemma-2-2B)을 강화한다.
+판정기를 그대로 **학습 신호**로 재사용해 방어 모델(**`google/gemma-4-E4B-it`** — 텍스트 전용, 확정)을 강화한다. *(베이스 스펙·포맷·양자화·의존성·배포는 [defense_tuning_design.md](defense_tuning_design.md) §0/§1/§6.1/§9 참조.)*
 **단순 증류 SFT는 쓰지 않는다**(교사 텍스트 토큰 모방 → 소형 모델 성능 저하). 대신:
 **① 경량 Masked 도메인 워밍업(역할·경계 프레이밍, 사실은 마스크) → ② DPO(오프라인 선호) → ③ GRPO(판정기 보상으로 공격성공률 직접 최소화)**.
 학습은 텍스트 '모방'이 아니라 '**결정/행동**'을 배우게 하고, **KL 정규화·replay·LoRA**로 base 성능을 보존한다.
@@ -94,14 +94,14 @@
 
 | 단계 | 내용 | 난이도/자원 |
 |---|---|---|
-| **0. 정비** | Python 3.10+ · `trl≥0.15·peft·datasets·accelerate` 설치 · **val파일/100자절단 버그 수정** · 포맷 1종 표준화(Gemma template) · **완성부/사실 마스킹 유틸** | 낮음 (필수 선행) |
+| **0. 정비** | Python 3.10~3.12 · **`transformers≥5.5.2·trl≥1.7·peft≥0.19·accelerate≥1.10`**(정확 핀: 설계 §6.1) 설치 · **val파일/100자절단 버그 수정** · 포맷 1종 표준화(**Gemma-4 template**) · **완성부/사실 마스킹 유틸** | 낮음 (필수 선행) |
 | **1. 데이터** | `create_defense_dataset.py`로 redteam.db→선호/GRPO 세트 · **benign 도메인 데이터 생성**(정상 응답) · gold 거부(강건모델 증류/Claude) · **비피지컬 벤치 추가 수집** · 무해셋 | 중 |
-| **2. 도메인 워밍업** | 경량 Masked — 역할·정책 프레이밍(benign 응답 + 거부 **균형**, 사실은 마스크) · 수백 스텝·과학습 금지 | 중 (MPS 가능) |
-| **3. DPO (주력1)** | (gold 거부 > 뚫림) 선호 + **KL** — 텍스트 모방 없이 결정만 | 중 (MPS 가능) |
-| **4. GRPO (주력2·폐루프)** | 판정기 보상 + 무해셋 도움성 + **KL/replay** · 공격성공률 직접 최소화 | 높음 (**GPU 권장**) |
+| **2. 도메인 워밍업** | 경량 Masked — 역할·정책 프레이밍(benign 응답 + 거부 **균형**, 사실은 마스크) · 수백 스텝·과학습 금지 | 중 (CUDA·QLoRA) |
+| **3. DPO (주력1)** | (gold 거부 > 뚫림) 선호 + **KL** — 텍스트 모방 없이 결정만 | 중 (CUDA) |
+| **4. GRPO (주력2·폐루프)** | 판정기 보상 + 무해셋 도움성 + **KL/replay** · 공격성공률 직접 최소화 | 높음 (**CUDA·vLLM 필수**) |
 | **5. 배포·재공격** | Ollama 배포 → **sfass-redteam 재실행** → 카테고리별 vuln 감소 측정 → 1로 반복 | 중 (폐루프) |
 
-> 권장 진행: **0 → 1 → 2(도메인 워밍업) → 3(DPO) → (GPU 여력 시)4(GRPO) → 5**. **단순 증류 SFT는 사용하지 않음.** 워밍업/DPO는 MPS로도 가능, GRPO만 GPU 권장.
+> 권장 진행: **0 → 1 → 2(도메인 워밍업) → 3(DPO) → 4(GRPO) → 5**. **단순 증류 SFT는 사용하지 않음.** **컴퓨트 경로 확정: CUDA 전 구간**(Unsloth `FastModel` + 4bit QLoRA, GRPO는 vLLM) — Mac/MPS·MLX 미채택.
 
 ---
 
@@ -115,9 +115,9 @@
 
 ## 6. 선행 정비 체크리스트 (착수 전 필수)
 
-- [ ] **환경**: Python 3.10+ 새 venv · `pip install "trl>=0.15" peft datasets accelerate transformers wandb` (상호호환 버전 핀)
+- [ ] **환경**: Python 3.10~3.12 새 venv · `pip install "transformers>=5.5.2" "trl>=1.7" "peft>=0.19" "accelerate>=1.10" datasets wandb` (+CUDA: `bitsandbytes>=0.49 vllm>=0.23` / +Mac: `mlx-lm mlx-tune`) · `HF_TOKEN`(게이트 모델) — 정확 핀 설계 §6.1
 - [ ] **버그**: `training_config.yaml`의 없는 `val_dataset_path` 교체 · `train_qrola.py` **지시문 100자 절단 제거**
-- [ ] **포맷 표준화**: Gemma chat template로 train=inference=reward 통일(현재 `### Instruction/### Response` ↔ ChatML ↔ Gemma 혼재)
+- [ ] **포맷 표준화**: **Gemma-4 chat template**(`<|turn>`/`<turn|>`·system 네이티브)로 train=inference=reward 통일 — `apply_chat_template` 일원화(현재 `### Instruction/### Response` ↔ ChatML 혼재 제거)
 - [ ] **Masked 라벨**: 완성부만 로스(수동 `-100` 마스킹) 유틸 추가
 - [ ] **데이터**: `create_defense_dataset.py` + 비피지컬 카테고리 벤치 추가 수집 + 무해셋
 
@@ -130,5 +130,5 @@
 - **과잉거부(도움성 붕괴)**: 무해셋 + 도움성 보상으로 균형(특히 GRPO).
 - **유해 콘텐츠 비학습**: Masked-SFT로 payload/compliance를 타깃에서 제외.
 - **포맷 일관성**: train↔serve↔reward 불일치는 researchnote가 지목한 과거 실패요인.
-- **소형 모델(2B) 한계**: 안전-능력 트레이드오프 · GRPO는 더 큰 베이스 고려 가능.
-- **컴퓨트**: GRPO 온라인 생성은 MPS로 버거움 → 클라우드 GPU 권장.
+- **베이스 상향(E4B ~8B w/emb)**: 2B 대비 안전-능력 헤드룸↑(능력 저하 완화). 단 멀티모달(비전/오디오 타워 내장)이라 **`Gemma4ForCausalLM` 텍스트 로드로 타워 동결** 필수 · **fp16 금지(bf16)** · PLE 저비트 양자화(Q2/Q3) 회피.
+- **컴퓨트/장치(확정)**: **CUDA 전 구간**(Unsloth+4bit QLoRA·GRPO는 vLLM). GRPO는 vLLM MPS 미지원이라 어차피 CUDA(≥40GB 권장) 필수 · E4B GRPO 난항 시 **dense 12B 폴백**(설계 §6.4).
