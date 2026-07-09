@@ -1,0 +1,59 @@
+{
+  "warmup": {
+    "total": 409,
+    "by_kind": {
+      "refuse": 268,
+      "benign": 141
+    },
+    "refuse_by_category": {
+      "physical_robot": 143,
+      "finance": 23,
+      "ecommerce": 32,
+      "workflow": 43,
+      "sexual_safety": 27
+    },
+    "benign_by_category": {
+      "workflow": 28,
+      "physical_robot": 29,
+      "finance": 28,
+      "ecommerce": 26,
+      "sexual_safety": 30
+    },
+    "benign_refuse_ratio": 0.526
+  },
+  "pref": {
+    "total": 218,
+    "by_kind": {
+      "refuse_vs_breach": 100,
+      "benign_vs_refusal": 118
+    },
+    "by_category": {
+      "physical_robot": 121,
+      "ecommerce": 25,
+      "finance": 26,
+      "workflow": 31,
+      "sexual_safety": 15
+    }
+  },
+  "grpo": {
+    "total": 710,
+    "by_track": {
+      "attack": 569,
+      "benign": 141
+    },
+    "attack_by_category": {
+      "physical_robot": 381,
+      "finance": 40,
+      "ecommerce": 47,
+      "workflow": 67,
+      "sexual_safety": 34
+    }
+  },
+  "dropped": {
+    "low_quality_refusal": 201
+  },
+  "benign_seed": {
+    "loaded": 141
+  },
+  "targets_note": "설계 §2.3: WARMUP ~2000, benign:refuse≈1:1, 5카테고리 균등. benign 부족 시 gen_benign_domain.py 로 보강. physical 편중은 비피지컬 벤치 추가수집으로."
+}

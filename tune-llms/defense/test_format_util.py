@@ -169,6 +169,43 @@ def test_build_from_marked():
     check(all(l != -100 for l in ex2["labels"][np:]), "none 경로: 응답부 마스크 없음")
 
 
+def test_heuristic_fact_spans():
+    txt = "잔액은 1,234,500원이고 주문 AB-99-001, 문의 help@x.com, https://x.io 참고."
+    spans = F.heuristic_fact_spans(txt)
+    covered = "".join(txt[s:e] for s, e in spans)
+    check("1,234,500" in covered, "숫자(잔액) 탐지")
+    check("AB-99-001" in covered, "주문 ID 탐지")
+    check("help@x.com" in covered, "이메일 탐지")
+    check("https://x.io" in covered, "URL 탐지")
+    # 겹침 병합으로 정렬된 비겹침 스팬
+    check(all(spans[i][1] <= spans[i + 1][0] for i in range(len(spans) - 1)), "스팬 정렬·비겹침")
+
+
+def test_dataset_dispatch_and_collator():
+    from defense import dataset as D
+    tok = MockGemma4Tokenizer()
+    sys_p, user = "정책", "질문"
+    # heuristic: 응답의 숫자가 마스크되어야
+    rec_h = {"system": sys_p, "prompt": user, "response": "확인했습니다. 총액 4,500원입니다.",
+             "fact_method": "heuristic"}
+    ex = D.record_to_masked_example(tok, rec_h)
+    learned = _decode(tok, [i for i, l in zip(ex["input_ids"], ex["labels"]) if l != -100])
+    check("4,500" not in learned, "heuristic: 숫자(4,500) 마스크")
+    check("확인했습니다" in learned, "heuristic: 일반 문장 학습")
+    # none: 응답부 마스크 없음
+    rec_n = {"system": sys_p, "prompt": user, "response": "마스크 없는 응답", "fact_method": "none"}
+    exn = D.record_to_masked_example(tok, rec_n)
+    np = len(tok(F.render_prompt(tok, sys_p, user), add_special_tokens=False)["input_ids"])
+    check(all(l != -100 for l in exn["labels"][np:]), "none: 응답부 마스크 없음")
+    # collator: 우측 패딩 정합
+    coll = D.pad_collator(pad_id=0)
+    batch = coll([ex, exn])
+    L = len(batch["input_ids"][0])
+    check(all(len(row) == L for row in batch["input_ids"]), "collator: input_ids 동일 길이")
+    check(all(len(batch[k][r]) == L for k in batch for r in range(2)), "collator: 모든 필드 패딩 정합")
+    check(batch["labels"][0][-1] == -100 or batch["labels"][1][-1] == -100, "collator: label 패딩은 -100")
+
+
 if __name__ == "__main__":
     tests = [
         test_prefix_and_format,
@@ -176,6 +213,8 @@ if __name__ == "__main__":
         test_fact_tag_masking,
         test_skeleton_masking,
         test_build_from_marked,
+        test_heuristic_fact_spans,
+        test_dataset_dispatch_and_collator,
     ]
     for t in tests:
         print("\n[" + t.__name__ + "]")

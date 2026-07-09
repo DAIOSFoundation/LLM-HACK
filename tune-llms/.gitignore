@@ -1,0 +1,6 @@
+# 방어 학습 파생 데이터(공격 payload 포함) — create_defense_dataset.py 로 재생성 가능하므로 커밋 제외.
+# (benign_seed.jsonl·stats.json 은 커밋: 무해 생성 데이터/통계)
+data/defense/warmup.jsonl
+data/defense/pref.jsonl
+data/defense/grpo.jsonl
+runs/

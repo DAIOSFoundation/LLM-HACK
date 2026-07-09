@@ -124,6 +124,34 @@ def parse_fact_tags(marked: str) -> Tuple[str, List[Span]]:
     return "".join(clean_parts), spans
 
 
+# 방법 C — 사후 휴리스틱(증류 데이터 안전망). 정밀도 낮음 → A/B 보완용(설계 §3.3).
+_FACT_PATTERNS = [
+    r"\d[\d,\.\-]*\d|\d",                     # 숫자(가격/수량/전화 등)
+    r"[$₩€£¥]\s?\d[\d,\.]*",                  # 통화
+    r"\b[A-Z0-9]{2,}-[A-Z0-9\-]{2,}\b",       # 주문/계좌 ID 류
+    r"https?://\S+",                          # URL
+    r"[\w\.\-]+@[\w\.\-]+\.\w+",               # 이메일
+    r"\"[^\"\n]{2,}\"|'[^'\n]{2,}'|“[^”\n]{2,}”",  # 따옴표 인용
+]
+_FACT_RE = re.compile("|".join(_FACT_PATTERNS))
+
+
+def heuristic_fact_spans(text: str) -> List[Span]:
+    """방법 C: 정규식으로 사실 후보(숫자·통화·ID·URL·이메일·인용) char span 추출.
+
+    정밀도 낮음 — 증류 거부 등 태그가 없는 gold 의 '안전망'용. 겹치면 병합.
+    """
+    spans = [(m.start(), m.end()) for m in _FACT_RE.finditer(text or "")]
+    spans.sort()
+    merged: List[Span] = []
+    for s, e in spans:
+        if merged and s <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+        else:
+            merged.append((s, e))
+    return merged
+
+
 _SKEL_RE = re.compile(
     r"\[(DECISION|REASON|FACT|ACTION)\]\s*(.*?)(?=\s*\[(?:DECISION|REASON|FACT|ACTION)\]|\Z)",
     re.S,
